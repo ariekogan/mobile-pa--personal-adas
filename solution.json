@@ -1,0 +1,18 @@
+{
+  "id": "personal-adas",
+  "name": "A-Team Personal Assistant",
+  "version": "1.0.0",
+  "description": "",
+  "identity": {
+    "actor_types": [],
+    "admin_roles": [],
+    "default_actor_type": "",
+    "default_roles": []
+  },
+  "skills": [],
+  "grants": [],
+  "handoffs": [],
+  "routing": {},
+  "platform_connectors": [],
+  "security_contracts": []
+}
