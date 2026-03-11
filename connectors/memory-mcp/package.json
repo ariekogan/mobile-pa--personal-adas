@@ -1,0 +1,11 @@
+{
+  "name": "memory-mcp",
+  "version": "1.0.0",
+  "description": "Persistent memory store for Personal Adas — SQLite-backed via DATA_DIR",
+  "type": "module",
+  "main": "server.js",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "better-sqlite3": "^11.8.1"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "device-mcp",
+  "version": "1.0.0",
+  "description": "Real device data MCP connector — reads from cloud relay instead of mock data. Drop-in replacement for device-mock-mcp.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "zod": "^3.25.17"
+  }
+}

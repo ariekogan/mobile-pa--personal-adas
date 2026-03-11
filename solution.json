@@ -2,17 +2,91 @@
   "id": "personal-adas",
   "name": "A-Team Personal Assistant",
   "version": "1.0.0",
-  "description": "",
+  "description": "Situation-aware personal assistant with proactive intelligence. Memory-first orchestrator detects situations (running late, meeting starting), checks taught rules, and routes to self-sufficient workers. Multi-channel messaging (SMS, email, WhatsApp) with proactive setup. Features: smart daily briefings, situation-aware messaging with ETA drafting, teach panel UI, integration gateway, and real device data sync.",
   "identity": {
-    "actor_types": [],
-    "admin_roles": [],
-    "default_actor_type": "",
+    "actor_types": [
+      {
+        "key": "owner",
+        "label": "Device Owner",
+        "description": "The person whose life this assistant manages",
+        "default_channel": "voice"
+      }
+    ],
+    "admin_roles": [
+      "owner"
+    ],
+    "default_actor_type": "owner",
     "default_roles": []
   },
   "skills": [],
   "grants": [],
   "handoffs": [],
   "routing": {},
-  "platform_connectors": [],
+  "platform_connectors": [
+    {
+      "id": "device-mock-mcp",
+      "required": true,
+      "ui_capable": true,
+      "description": "Device data connector",
+      "used_by": [
+        "pa-orchestrator",
+        "life-manager",
+        "daily-intel",
+        "messaging-agent",
+        "notification-triage"
+      ]
+    },
+    {
+      "id": "memory-mcp",
+      "required": true,
+      "ui_capable": true,
+      "description": "Memory connector",
+      "used_by": [
+        "pa-orchestrator",
+        "life-manager",
+        "memory-keeper",
+        "daily-intel",
+        "messaging-agent",
+        "notification-triage",
+        "teach-this"
+      ]
+    },
+    {
+      "id": "email-mcp",
+      "required": false,
+      "description": "Email connector",
+      "used_by": [
+        "pa-orchestrator",
+        "messaging-agent",
+        "notification-triage",
+        "daily-intel"
+      ]
+    },
+    {
+      "id": "whatsapp-mcp",
+      "required": false,
+      "description": "WhatsApp connector",
+      "used_by": [
+        "pa-orchestrator",
+        "messaging-agent",
+        "notification-triage",
+        "daily-intel"
+      ]
+    },
+    {
+      "id": "handoff-controller-mcp",
+      "required": true,
+      "description": "Handoff controller",
+      "used_by": [
+        "pa-orchestrator",
+        "life-manager",
+        "memory-keeper",
+        "daily-intel",
+        "messaging-agent",
+        "notification-triage",
+        "teach-this"
+      ]
+    }
+  ],
   "security_contracts": []
 }
