@@ -1,0 +1,10 @@
+{
+  "name": "mobile-device-mcp",
+  "version": "1.0.0",
+  "description": "Mock device data for Personal Adas — calendar, contacts, location, messaging",
+  "type": "module",
+  "main": "server.js",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1"
+  }
+}
