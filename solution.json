@@ -12,10 +12,11 @@
         "default_channel": "voice"
       }
     ],
-    "default_actor_type": "owner",
     "admin_roles": [
       "owner"
-    ]
+    ],
+    "default_actor_type": "owner",
+    "default_roles": []
   },
   "skills": [
     {
@@ -110,7 +111,7 @@
   "grants": [
     {
       "key": "pa.verified_user",
-      "description": "Proves the caller passed voice verification",
+      "description": "Proves voice verification",
       "issued_by": [
         "pa-orchestrator"
       ],
@@ -130,7 +131,7 @@
       "id": "orchestrator-to-life-manager",
       "from": "pa-orchestrator",
       "to": "life-manager",
-      "trigger": "User needs general life management",
+      "trigger": "User needs life management",
       "grants_passed": [
         "pa.verified_user"
       ],
@@ -141,7 +142,7 @@
       "id": "orchestrator-to-memory",
       "from": "pa-orchestrator",
       "to": "memory-keeper",
-      "trigger": "User wants to store or recall memories",
+      "trigger": "User wants memory operations",
       "grants_passed": [
         "pa.verified_user"
       ],
@@ -185,7 +186,7 @@
       "id": "orchestrator-to-teach-this",
       "from": "pa-orchestrator",
       "to": "teach-this",
-      "trigger": "User wants to teach the PA a behavior",
+      "trigger": "User wants to teach a behavior",
       "grants_passed": [
         "pa.verified_user"
       ],
@@ -237,7 +238,7 @@
     {
       "id": "personal-assistant-ui-mcp",
       "ui_capable": true,
-      "description": "PA UI plugins"
+      "description": "Solution UI connector"
     }
   ],
   "voice": {
@@ -247,7 +248,23 @@
       "name": "A-Team",
       "style": "warm"
     },
-    "welcome": "Hey! It's A-Team. What can I help you with?"
+    "welcome": "Hey! It's A-Team. What can I help you with?",
+    "prompt": {
+      "behaviorRules": "You are A-Team. Send every user message to pa-orchestrator via send_message_to_skill.",
+      "informationGathering": "Confirm before sending messages."
+    },
+    "verification": {
+      "enabled": true,
+      "method": "security_question",
+      "securityQuestion": {
+        "question": "What is your date of birth?",
+        "answer": "1990-01-15",
+        "answerMatchMode": "smart"
+      },
+      "maxAttempts": 3,
+      "onFailure": "hangup",
+      "skipRecentMinutes": 30
+    }
   },
-  "functional_connectors": []
+  "security_contracts": []
 }

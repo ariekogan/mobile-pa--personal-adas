@@ -1,212 +1,542 @@
 {
   "id": "memory-keeper",
   "name": "Memory Keeper",
+  "description": "PAs forget everything between conversations.",
   "version": "1.0.0",
-  "phase": "DEPLOYED",
+  "phase": "TOOL_DEFINITION",
+  "ui_capable": false,
+  "connectors": [
+    "memory-mcp"
+  ],
   "problem": {
-    "statement": "Personal assistants forget everything between conversations. Users need persistent memory for preferences, facts, and instructions.",
-    "context": "Persistent memory worker skill that stores and recalls user preferences, personal facts, standing instructions, and learned patterns using SQLite-backed storage.",
+    "statement": "PAs forget everything between conversations.",
+    "context": "Persistent memory with SQLite.",
     "goals": [
-      "Store preferences like 'no meetings before 10am' permanently",
-      "Remember facts like 'allergic to peanuts' or 'wife's birthday is June 15'",
-      "Honor standing instructions like 'always remind me about medications at 8am'",
-      "Recall relevant memories when asked 'what did I tell you about...'"
+      "Store preferences",
+      "Remember facts"
     ]
   },
+  "tools": [
+    {
+      "id": "t1",
+      "id_status": "permanent",
+      "name": "memory.store",
+      "description": "Store memory",
+      "inputs": [
+        {
+          "name": "type",
+          "type": "string",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "content",
+          "type": "string",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "tags",
+          "type": "array",
+          "required": false,
+          "description": ""
+        }
+      ],
+      "output": {
+        "type": "object"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "memory-mcp",
+        "mcp_tool": "memory.store"
+      },
+      "policy": {
+        "allowed": "always"
+      },
+      "mock": {
+        "enabled": true,
+        "mode": "examples",
+        "examples": [
+          {
+            "id": "tool-memory-store-auto",
+            "input": {
+              "type": "standard",
+              "content": "example"
+            },
+            "output": {
+              "success": true,
+              "data": {}
+            },
+            "description": "Auto-generated example for memory.store"
+          }
+        ]
+      },
+      "security": {
+        "classification": "public"
+      }
+    },
+    {
+      "id": "t2",
+      "id_status": "permanent",
+      "name": "memory.recall",
+      "description": "Recall memories",
+      "inputs": [
+        {
+          "name": "query",
+          "type": "string",
+          "required": true,
+          "description": ""
+        }
+      ],
+      "output": {
+        "type": "object"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "memory-mcp",
+        "mcp_tool": "memory.recall"
+      },
+      "policy": {
+        "allowed": "always"
+      },
+      "mock": {
+        "enabled": true,
+        "mode": "examples",
+        "examples": [
+          {
+            "id": "tool-memory-recall-auto",
+            "input": {
+              "query": "search term"
+            },
+            "output": {
+              "success": true,
+              "data": {}
+            },
+            "description": "Auto-generated example for memory.recall"
+          }
+        ]
+      },
+      "security": {
+        "classification": "public"
+      }
+    },
+    {
+      "id": "t3",
+      "id_status": "permanent",
+      "name": "memory.list",
+      "description": "List memories",
+      "inputs": [
+        {
+          "name": "type",
+          "type": "string",
+          "required": false,
+          "description": ""
+        }
+      ],
+      "output": {
+        "type": "object"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "memory-mcp",
+        "mcp_tool": "memory.list"
+      },
+      "policy": {
+        "allowed": "always"
+      },
+      "mock": {
+        "enabled": true,
+        "mode": "examples",
+        "examples": [
+          {
+            "id": "tool-memory-list-auto",
+            "input": {},
+            "output": {
+              "results": [
+                {
+                  "id": 1,
+                  "name": "Example item"
+                }
+              ],
+              "total_count": 1
+            },
+            "description": "Auto-generated example for memory.list"
+          }
+        ]
+      },
+      "security": {
+        "classification": "public"
+      }
+    },
+    {
+      "id": "t4",
+      "id_status": "permanent",
+      "name": "memory.update",
+      "description": "Update memory",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "number",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "content",
+          "type": "string",
+          "required": false,
+          "description": ""
+        }
+      ],
+      "output": {
+        "type": "object"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "memory-mcp",
+        "mcp_tool": "memory.update"
+      },
+      "policy": {
+        "allowed": "always"
+      },
+      "mock": {
+        "enabled": true,
+        "mode": "examples",
+        "examples": [
+          {
+            "id": "tool-memory-update-auto",
+            "input": {
+              "id": 1
+            },
+            "output": {
+              "id": 1,
+              "status": "updated",
+              "message": "Updated successfully."
+            },
+            "description": "Auto-generated example for memory.update"
+          }
+        ]
+      },
+      "security": {
+        "classification": "public"
+      }
+    },
+    {
+      "id": "t5",
+      "id_status": "permanent",
+      "name": "memory.delete",
+      "description": "Delete memory",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "number",
+          "required": true,
+          "description": ""
+        }
+      ],
+      "output": {
+        "type": "object"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "memory-mcp",
+        "mcp_tool": "memory.delete"
+      },
+      "policy": {
+        "allowed": "always"
+      },
+      "mock": {
+        "enabled": true,
+        "mode": "examples",
+        "examples": [
+          {
+            "id": "tool-memory-delete-auto",
+            "input": {
+              "id": 1
+            },
+            "output": {
+              "success": true,
+              "message": "Operation completed successfully."
+            },
+            "description": "Auto-generated example for memory.delete"
+          }
+        ]
+      },
+      "security": {
+        "classification": "public"
+      }
+    }
+  ],
+  "intents": {
+    "supported": [
+      {
+        "id": "store",
+        "description": "Store memory",
+        "examples": [
+          "Store memory",
+          "I need to store memory",
+          "Can you store memory?",
+          "Please store memory"
+        ],
+        "maps_to_workflow": "store_flow",
+        "entities": [
+          {
+            "name": "type",
+            "type": "string",
+            "required": false,
+            "extract_from": "message"
+          },
+          {
+            "name": "content",
+            "type": "string",
+            "required": false,
+            "extract_from": "message"
+          }
+        ]
+      },
+      {
+        "id": "recall",
+        "description": "Recall memories",
+        "examples": [
+          "Recall memories",
+          "I need to recall memories",
+          "Can you recall memories?",
+          "Please recall memories"
+        ],
+        "maps_to_workflow": "recall_flow",
+        "entities": [
+          {
+            "name": "query",
+            "type": "string",
+            "required": false,
+            "extract_from": "message"
+          }
+        ]
+      },
+      {
+        "id": "list",
+        "description": "List memories",
+        "examples": [
+          "List memories",
+          "I need to list memories",
+          "Can you list memories?",
+          "Please list memories"
+        ],
+        "maps_to_workflow": "list_flow"
+      },
+      {
+        "id": "update",
+        "description": "Update memory",
+        "examples": [
+          "Update memory",
+          "I need to update memory",
+          "Can you update memory?",
+          "Please update memory"
+        ],
+        "maps_to_workflow": "update_flow",
+        "entities": [
+          {
+            "name": "id",
+            "type": "number",
+            "required": false,
+            "extract_from": "message"
+          }
+        ]
+      },
+      {
+        "id": "delete",
+        "description": "Delete memory",
+        "examples": [
+          "Delete memory",
+          "I need to delete memory",
+          "Can you delete memory?",
+          "Please delete memory"
+        ],
+        "maps_to_workflow": "delete_flow",
+        "entities": [
+          {
+            "name": "id",
+            "type": "number",
+            "required": false,
+            "extract_from": "message"
+          }
+        ]
+      }
+    ],
+    "thresholds": {
+      "accept": 0.85,
+      "clarify": 0.6,
+      "reject": 0.4
+    },
+    "out_of_domain": {
+      "action": "redirect",
+      "message": "This request is outside my capabilities.",
+      "suggest_domains": []
+    }
+  },
+  "policy": {
+    "guardrails": {
+      "never": [],
+      "always": []
+    },
+    "workflows": [
+      {
+        "id": "store_flow",
+        "name": "Store memory",
+        "description": "Auto-generated workflow for store",
+        "trigger": "store",
+        "steps": [
+          "memory.store"
+        ],
+        "required": false,
+        "on_deviation": "warn"
+      },
+      {
+        "id": "recall_flow",
+        "name": "Recall memories",
+        "description": "Auto-generated workflow for recall",
+        "trigger": "recall",
+        "steps": [
+          "memory.recall"
+        ],
+        "required": false,
+        "on_deviation": "warn"
+      },
+      {
+        "id": "list_flow",
+        "name": "List memories",
+        "description": "Auto-generated workflow for list",
+        "trigger": "list",
+        "steps": [
+          "memory.list"
+        ],
+        "required": false,
+        "on_deviation": "warn"
+      },
+      {
+        "id": "update_flow",
+        "name": "Update memory",
+        "description": "Auto-generated workflow for update",
+        "trigger": "update",
+        "steps": [
+          "memory.update"
+        ],
+        "required": false,
+        "on_deviation": "warn"
+      },
+      {
+        "id": "delete_flow",
+        "name": "Delete memory",
+        "description": "Auto-generated workflow for delete",
+        "trigger": "delete",
+        "steps": [
+          "memory.delete"
+        ],
+        "required": false,
+        "on_deviation": "warn"
+      }
+    ],
+    "approvals": [],
+    "escalation": {
+      "enabled": false,
+      "conditions": []
+    }
+  },
+  "scenarios": [
+    {
+      "id": "store",
+      "title": "Store memory",
+      "description": "Test scenario for store",
+      "steps": [
+        "User says: \"Store memory\"",
+        "Agent calls memory.store — store memory",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for store is handled successfully."
+    },
+    {
+      "id": "recall",
+      "title": "Recall memories",
+      "description": "Test scenario for recall",
+      "steps": [
+        "User says: \"Recall memories\"",
+        "Agent calls memory.recall — recall memories",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for recall is handled successfully."
+    },
+    {
+      "id": "list",
+      "title": "List memories",
+      "description": "Test scenario for list",
+      "steps": [
+        "User says: \"List memories\"",
+        "Agent calls memory.list — list memories",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for list is handled successfully."
+    },
+    {
+      "id": "update",
+      "title": "Update memory",
+      "description": "Test scenario for update",
+      "steps": [
+        "User says: \"Update memory\"",
+        "Agent calls memory.update — update memory",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for update is handled successfully."
+    },
+    {
+      "id": "delete",
+      "title": "Delete memory",
+      "description": "Test scenario for delete",
+      "steps": [
+        "User says: \"Delete memory\"",
+        "Agent calls memory.delete — delete memory",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for delete is handled successfully."
+    }
+  ],
   "role": {
     "name": "Memory Keeper",
-    "persona": "You are the user's persistent memory — you never forget. When the user tells you to remember something, you categorize it properly:\n\n- PREFERENCE: Rules, likes, dislikes ('no meetings before 10am', 'I prefer window seats')\n- FACT: Personal information ('wife's name is Sarah', 'allergic to peanuts', 'Emma's soccer is on Tuesdays')\n- INSTRUCTION: Standing orders ('always remind me about medications', 'never schedule over lunch')\n- PATTERN: Behavioral patterns ('usually leaves work at 5:30')\n\nAlways confirm what you stored. When asked to recall, search intelligently and present findings clearly. If the user wants to update or remove a memory, do it immediately.\n\nTag memories with relevant keywords for better recall later.",
+    "persona": "Persistent memory. Categorize as PREFERENCE, FACT, INSTRUCTION, or PATTERN.",
     "goals": [
-      "Store memories with proper categorization and tags",
-      "Recall memories intelligently using search",
-      "Update and delete memories on request",
-      "Always confirm what was stored/recalled"
+      "Store with categorization",
+      "Recall intelligently"
     ],
     "limitations": [
-      "Cannot access calendar or contacts directly — only memory store",
-      "Cannot send messages or create events"
+      "Cannot access calendar"
     ],
     "communication_style": {
       "tone": "warm",
       "verbosity": "concise"
     }
   },
-  "tools": [
-    {
-      "id": "tool-mem-store",
-      "name": "memory.store",
-      "description": "Store a new memory — preference, fact, instruction, or pattern. Use 'preference' for likes/dislikes/rules. Use 'fact' for personal info. Use 'instruction' for standing orders. Use 'pattern' for behavioral patterns.",
-      "inputs": [
-        {
-          "name": "type",
-          "type": "string",
-          "required": true,
-          "description": "Memory type: preference, fact, instruction, or pattern"
-        },
-        {
-          "name": "content",
-          "type": "string",
-          "required": true,
-          "description": "The memory content in natural language"
-        },
-        {
-          "name": "tags",
-          "type": "array",
-          "required": false,
-          "description": "Tags for categorization (e.g., ['calendar', 'morning'])"
-        },
-        {
-          "name": "context",
-          "type": "string",
-          "required": false,
-          "description": "Context about when/why this was stored"
-        }
-      ],
-      "output": {
-        "type": "object",
-        "description": "Stored memory confirmation with ID"
+  "engine": {
+    "model": "claude-sonnet-4-20250514",
+    "temperature": 0.3,
+    "rv2": {
+      "max_iterations": 10,
+      "iteration_timeout_ms": 30000,
+      "allow_parallel_tools": false,
+      "on_max_iterations": "fail"
+    },
+    "hlr": {
+      "enabled": true,
+      "critic": {
+        "enabled": false,
+        "strictness": "medium"
       },
-      "source": {
-        "type": "mcp_bridge",
-        "connection_id": "memory-mcp",
-        "mcp_tool": "memory.store"
+      "reflection": {
+        "enabled": false,
+        "depth": "shallow"
       }
     },
-    {
-      "id": "tool-mem-recall",
-      "name": "memory.recall",
-      "description": "Recall memories by search query. Searches content and tags. Use when user asks 'what did I tell you about...', 'do you remember...', or to check preferences before actions.",
-      "inputs": [
-        {
-          "name": "query",
-          "type": "string",
-          "required": true,
-          "description": "Search query"
-        },
-        {
-          "name": "type",
-          "type": "string",
-          "required": false,
-          "description": "Filter by type: preference, fact, instruction, pattern"
-        },
-        {
-          "name": "limit",
-          "type": "number",
-          "required": false,
-          "description": "Max results (default 10)"
-        }
-      ],
-      "output": {
-        "type": "object",
-        "description": "Matching memories"
-      },
-      "source": {
-        "type": "mcp_bridge",
-        "connection_id": "memory-mcp",
-        "mcp_tool": "memory.recall"
-      }
-    },
-    {
-      "id": "tool-mem-list",
-      "name": "memory.list",
-      "description": "List all stored memories, optionally filtered by type. Use for 'what are my preferences?', 'show all my facts'.",
-      "inputs": [
-        {
-          "name": "type",
-          "type": "string",
-          "required": false,
-          "description": "Filter by type"
-        },
-        {
-          "name": "limit",
-          "type": "number",
-          "required": false,
-          "description": "Max results (default 20)"
-        },
-        {
-          "name": "offset",
-          "type": "number",
-          "required": false,
-          "description": "Pagination offset"
-        }
-      ],
-      "output": {
-        "type": "object",
-        "description": "List of memories with pagination"
-      },
-      "source": {
-        "type": "mcp_bridge",
-        "connection_id": "memory-mcp",
-        "mcp_tool": "memory.list"
-      }
-    },
-    {
-      "id": "tool-mem-update",
-      "name": "memory.update",
-      "description": "Update an existing memory by ID. Use when user corrects a stored memory.",
-      "inputs": [
-        {
-          "name": "id",
-          "type": "number",
-          "required": true,
-          "description": "Memory ID"
-        },
-        {
-          "name": "content",
-          "type": "string",
-          "required": false,
-          "description": "New content"
-        },
-        {
-          "name": "tags",
-          "type": "array",
-          "required": false,
-          "description": "New tags"
-        },
-        {
-          "name": "context",
-          "type": "string",
-          "required": false,
-          "description": "New context"
-        }
-      ],
-      "output": {
-        "type": "object",
-        "description": "Updated memory"
-      },
-      "source": {
-        "type": "mcp_bridge",
-        "connection_id": "memory-mcp",
-        "mcp_tool": "memory.update"
-      }
-    },
-    {
-      "id": "tool-mem-delete",
-      "name": "memory.delete",
-      "description": "Delete a memory by ID. Use when user says 'forget that' or 'remove that preference'.",
-      "inputs": [
-        {
-          "name": "id",
-          "type": "number",
-          "required": true,
-          "description": "Memory ID to delete"
-        }
-      ],
-      "output": {
-        "type": "object",
-        "description": "Deletion confirmation"
-      },
-      "source": {
-        "type": "mcp_bridge",
-        "connection_id": "memory-mcp",
-        "mcp_tool": "memory.delete"
-      }
+    "autonomy": {
+      "level": "autonomous"
     }
-  ],
-  "connectors": [
-    "memory-mcp",
-    "personal-assistant-ui-mcp"
-  ],
+  },
   "grant_mappings": [],
   "access_policy": {
     "rules": [
@@ -221,25 +551,6 @@
       }
     ]
   },
-  "intents": {
-    "supported": [
-      {
-        "id": "i1",
-        "description": "Default",
-        "examples": [
-          "help"
-        ]
-      }
-    ]
-  },
-  "scenarios": [
-    {
-      "id": "s1",
-      "title": "Test",
-      "steps": [
-        "test"
-      ],
-      "expected_outcome": "ok"
-    }
-  ]
+  "response_filters": [],
+  "triggers": []
 }
