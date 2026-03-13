@@ -319,12 +319,12 @@ async function loadDashboard() {
   `;
 
   // Fetch all data in parallel
-  const cid = hostConnectorId || "mobile-device-mcp";
+  // Route each call to its specific connector — don't rely on hostConnectorId
   const [todayRes, upcomingRes, memRes, contactsRes] = await Promise.allSettled([
-    mcpCall("device.calendar.today", {}, cid),
-    mcpCall("device.calendar.upcoming", { days: 7 }, cid),
+    mcpCall("device.calendar.today", {}, "mobile-device-mcp"),
+    mcpCall("device.calendar.upcoming", { days: 7 }, "mobile-device-mcp"),
     mcpCall("memory.list", {}, "memory-mcp"),
-    mcpCall("device.contacts.search", { query: "" }, cid),
+    mcpCall("device.contacts.search", { query: "" }, "mobile-device-mcp"),
   ]);
 
   // Today
