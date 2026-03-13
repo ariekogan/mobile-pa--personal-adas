@@ -274,31 +274,25 @@
       }
     ]
   },
-  "scenarios": [
-    {
-      "id": "default-scenario",
-      "title": "Default Scenario",
-      "steps": [
-        "Call any tool"
-      ],
-      "expected_outcome": "Success"
-    }
-  ],
   "intents": {
     "supported": [
       {
-        "id": "default-intent",
-        "description": "Default intent",
+        "id": "i1",
+        "description": "Default",
         "examples": [
-          "Hi"
+          "help"
         ]
       }
     ]
   },
-  "policy": {
-    "guardrails": {
-      "never": [],
-      "always": []
+  "scenarios": [
+    {
+      "id": "s1",
+      "title": "Test",
+      "steps": [
+        "test"
+      ],
+      "expected_outcome": "ok"
     }
-  }
+  ]
 }
