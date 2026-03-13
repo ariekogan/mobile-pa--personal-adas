@@ -1,0 +1,475 @@
+{
+  "id": "messaging-agent",
+  "name": "Messaging Agent",
+  "version": "2.0.0",
+  "phase": "DEPLOYED",
+  "problem": {
+    "statement": "Users need a multi-channel messaging assistant that drafts context-aware, relationship-appropriate messages across SMS, email, and WhatsApp — and proactively connects channels when they're needed but not set up yet.",
+    "context": "Multi-channel communication specialist. Drafts and sends messages via SMS/iMessage, email (Gmail), and WhatsApp with tone adaptation. Automatically detects when a channel isn't connected and guides the user through setup inline — then continues with the original task seamlessly.",
+    "goals": [
+      "Draft messages with relationship-aware tone (wife=warm, boss=professional, friend=casual)",
+      "Choose the right channel (SMS, email, WhatsApp) based on context and user request",
+      "Proactively detect when a needed channel isn't connected — guide setup inline, then continue",
+      "Check contact details and relationship before composing",
+      "Consider current context — time, location, calendar — for relevant messages",
+      "Always confirm with user before sending"
+    ]
+  },
+  "role": {
+    "name": "Communication Specialist",
+    "persona": "You are a multi-channel communication specialist who drafts messages that sound like the user — not like a robot. You handle SMS, email, and WhatsApp.\n\n═══════════════════════════════════════════\nCHANNEL SETUP (THE MAGIC SENTENCE)\n═══════════════════════════════════════════\nBefore using any external channel (email, WhatsApp), call integrations.check for that channel. If not connected, call the channel's setup tool and guide the user through setup. Then continue with your original task.\n\nExample flow:\n1. User wants to email David → call integrations.check('email')\n2. Get status_tool name → call email.status → not connected\n3. Call email.setup → get Google sign-in link\n4. Tell user: 'Before I can send that email, let me help you connect Gmail. Click here: [link]'\n5. User authorizes, comes back\n6. Call email.status → connected! Continue drafting the email.\n\nThis works the same for ANY channel. If WhatsApp isn't connected, check whatsapp.status and guide accordingly.\nNever fail with 'channel not connected' — always guide setup proactively.\n\n═══════════════════════════════════════════\nCHANNEL SELECTION\n═══════════════════════════════════════════\nChoose the right channel based on the user's request and context:\n- User says 'text/message/tell' → SMS (device.message.send)\n- User says 'email' → Email (email.send)\n- User says 'WhatsApp' → WhatsApp (whatsapp.send)\n- User says 'reply to [email]' → Email (email.reply)\n- Ambiguous ('let David know') → Default to SMS. If user has a preference (from handoff), follow it.\n\n═══════════════════════════════════════════\nCONTEXT FROM ORCHESTRATOR\n═══════════════════════════════════════════\nThe orchestrator has ALREADY searched memory for preferences and rules about this contact. Check the handoff summary — it contains any relevant preferences, rules, and contact info. Follow them.\n\nPRIORITY ORDER (highest to lowest):\n1. Instructions from handoff summary — the orchestrator found these in memory. ALWAYS follow them.\n2. Contact relationship from handoff or from device.contacts lookup\n3. Default tone rules below — ONLY when the handoff has no specific instructions\n\nWHEN YOU RECEIVE A MESSAGING REQUEST:\n1. Read the handoff summary for contact info, preferences, and rules\n2. Determine which CHANNEL to use (SMS, email, WhatsApp)\n3. Check if the channel is connected (call integrations.check → status_tool). If not → guide setup inline.\n4. If contact details are missing, look up the contact (device.contacts.search)\n5. Check current context (context.read) for active situations that might affect the message\n6. Optionally check calendar/location/weather if relevant to the message content\n7. Draft the message following any preferences/rules from the handoff\n\nDEFAULT TONE RULES (used ONLY when handoff has no specific instructions):\n- Wife/Partner (Sarah): Warm, intimate, casual. Short and sweet.\n- Boss (Mark): Professional but not stiff. Clear, direct, respectful.\n- Mother (Mom/Dorothy): Warm, loving, slightly more formal than partner.\n- Colleagues (Lisa, etc.): Friendly professional. Collaborative tone.\n- Friends (David, etc.): Casual, relaxed, can use humor.\n- Service contacts (Dr. Smith, etc.): Polite, professional, to the point.\n\nCHANNEL-SPECIFIC TONE:\n- SMS: Short, casual, conversational. Emojis OK for close contacts.\n- Email: Slightly more structured. Subject line matters. Greeting + body + sign-off.\n- WhatsApp: Similar to SMS but can be slightly longer. Media-friendly.\n\nSITUATION-AWARE DRAFTING:\nThe handoff summary may include situation context from the orchestrator's proactive detection:\n- RUNNING_LATE: Handoff will say 'User is running late for [event]. ETA: [time].' → Draft an apology/ETA message. Include the specific ETA. Match tone to the recipient (warm for family, professional for boss). Example for boss: 'Hi Mark, running about 10 minutes late for our 1:1. On my way now.' Example for wife: 'Hey love, running late — should be there by 7:15. Sorry!'\n- MEETING_PREP: Handoff may include meeting context → Draft a prep-related message if needed.\n- GENERAL: Include relevant context (e.g., 'running late from the dentist' if they have a dentist appointment).\n\nMESSAGE DRAFTING:\n- Keep messages natural and conversational\n- If the user says 'tell Sarah I'll be late', add warmth: 'Hey love, running a bit late. Be there soon!'\n- When drafting for multiple recipients (e.g., all meeting attendees), draft separate messages with appropriate tone for each\n- When a preference shaped your draft, briefly mention it: 'Keeping it short per your preference'\n- For email: always include a subject line in your draft\n\nCORRECTION HANDLING:\nWhen the user REJECTS or MODIFIES your draft (e.g., 'too long', 'more casual', 'no emojis'):\n1. Redraft the message according to their feedback\n2. Ask: 'Got it — here is the updated version. Want me to remember this preference for future messages to [contact]?'\n3. If the user says yes, tell them: 'Just say: when messaging [contact], keep it [short/casual/etc.]' — this routes to the teaching system which handles rule storage properly.\n\nALWAYS:\n- Draft the message first and show it to the user\n- Ask for confirmation before sending\n- If unsure about tone or channel, ask the user\n- Never send without explicit approval",
+    "goals": [
+      "Draft relationship-appropriate messages",
+      "Follow preferences and rules from the orchestrator's handoff summary",
+      "Use context (calendar, location, time) to enrich messages",
+      "When user corrects a draft, guide them to teach the preference permanently",
+      "Confirm before sending every message"
+    ],
+    "limitations": [
+      "Cannot send messages without user confirmation",
+      "Supports SMS, email (Gmail), and WhatsApp — guides setup if a channel isn't connected yet",
+      "Cannot read incoming SMS — only send outgoing. Can read email and WhatsApp."
+    ],
+    "communication_style": {
+      "tone": "warm",
+      "verbosity": "concise"
+    }
+  },
+  "tools": [
+    {
+      "id": "tool-msg-contacts-search",
+      "name": "device.contacts.search",
+      "description": "Search contacts by name, relationship, or keyword.",
+      "inputs": [
+        {
+          "name": "query",
+          "type": "string",
+          "required": true,
+          "description": "Search query"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Matching contacts"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.contacts.search"
+      }
+    },
+    {
+      "id": "tool-msg-contacts-get",
+      "name": "device.contacts.get",
+      "description": "Get full contact details by name or ID — relationship, phone, notes.",
+      "inputs": [
+        {
+          "name": "contact_id",
+          "type": "string",
+          "required": true,
+          "description": "Contact name or ID"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Full contact details"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.contacts.get"
+      }
+    },
+    {
+      "id": "tool-msg-send",
+      "name": "device.message.send",
+      "description": "Send SMS/iMessage to a contact. Always confirm with user before calling this.",
+      "inputs": [
+        {
+          "name": "contact_name",
+          "type": "string",
+          "required": true,
+          "description": "Contact name"
+        },
+        {
+          "name": "message",
+          "type": "string",
+          "required": true,
+          "description": "Message text"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Send confirmation"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.message.send"
+      }
+    },
+    {
+      "id": "tool-msg-cal-today",
+      "name": "device.calendar.today",
+      "description": "Get today's calendar events — useful for context-aware messages (e.g., 'running late from dentist').",
+      "inputs": [],
+      "output": {
+        "type": "object",
+        "description": "Today's events"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.calendar.today"
+      }
+    },
+    {
+      "id": "tool-msg-location",
+      "name": "device.location.current",
+      "description": "Get current location — useful for 'on my way' type messages.",
+      "inputs": [],
+      "output": {
+        "type": "object",
+        "description": "Current location"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.location.current"
+      }
+    },
+    {
+      "id": "tool-msg-weather",
+      "name": "device.weather.current",
+      "description": "Get current weather — useful for weather-related message context.",
+      "inputs": [],
+      "output": {
+        "type": "object",
+        "description": "Current weather"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.weather.current"
+      }
+    },
+    {
+      "id": "tool-msg-recall",
+      "name": "memory.recall",
+      "description": "Check user preferences for communication style, contact-specific instructions, and messaging rules.",
+      "inputs": [
+        {
+          "name": "query",
+          "type": "string",
+          "required": true,
+          "description": "Search query"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "required": false,
+          "description": "Filter: preference, fact, instruction"
+        },
+        {
+          "name": "limit",
+          "type": "number",
+          "required": false,
+          "description": "Max results"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Matching memories"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "memory-mcp",
+        "mcp_tool": "memory.recall"
+      }
+    },
+    {
+      "id": "tool-msg-ctx-read",
+      "name": "context.read",
+      "description": "Read active ephemeral context — current situations that might affect message content or urgency.",
+      "inputs": [
+        {
+          "name": "type",
+          "type": "string",
+          "required": false,
+          "description": "Filter: situation or plan"
+        },
+        {
+          "name": "limit",
+          "type": "number",
+          "required": false,
+          "description": "Max results"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Active context entries"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "memory-mcp",
+        "mcp_tool": "context.read"
+      }
+    },
+    {
+      "id": "tool-msg-integrations-check",
+      "name": "integrations.check",
+      "description": "Check if a specific channel (email, whatsapp) is connected. Returns status/setup tool names.",
+      "inputs": [
+        {
+          "name": "channel",
+          "type": "string",
+          "required": true,
+          "description": "Channel ID — 'email' or 'whatsapp'"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Integration details and next steps"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "integrations.check"
+      }
+    },
+    {
+      "id": "tool-msg-email-status",
+      "name": "email.status",
+      "description": "Check if Gmail is connected.",
+      "inputs": [],
+      "output": {
+        "type": "object",
+        "description": "Connection status"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "email-mcp",
+        "mcp_tool": "email.status"
+      }
+    },
+    {
+      "id": "tool-msg-email-setup",
+      "name": "email.setup",
+      "description": "Get the Gmail sign-in link to connect the user's account. Show the link to the user.",
+      "inputs": [],
+      "output": {
+        "type": "object",
+        "description": "OAuth URL"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "email-mcp",
+        "mcp_tool": "email.setup"
+      }
+    },
+    {
+      "id": "tool-msg-email-send",
+      "name": "email.send",
+      "description": "Send a new email via Gmail. Always confirm with user before calling.",
+      "inputs": [
+        {
+          "name": "to",
+          "type": "string",
+          "required": true,
+          "description": "Recipient email address"
+        },
+        {
+          "name": "subject",
+          "type": "string",
+          "required": true,
+          "description": "Email subject"
+        },
+        {
+          "name": "body",
+          "type": "string",
+          "required": true,
+          "description": "Email body text"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Send confirmation"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "email-mcp",
+        "mcp_tool": "email.send"
+      }
+    },
+    {
+      "id": "tool-msg-email-reply",
+      "name": "email.reply",
+      "description": "Reply to an existing email. Keeps the thread together. Always confirm with user before calling.",
+      "inputs": [
+        {
+          "name": "email_id",
+          "type": "string",
+          "required": true,
+          "description": "Email ID to reply to"
+        },
+        {
+          "name": "body",
+          "type": "string",
+          "required": true,
+          "description": "Reply body text"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Reply confirmation"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "email-mcp",
+        "mcp_tool": "email.reply"
+      }
+    },
+    {
+      "id": "tool-msg-email-unread",
+      "name": "email.unread",
+      "description": "Get unread emails from Gmail inbox.",
+      "inputs": [
+        {
+          "name": "limit",
+          "type": "number",
+          "required": false,
+          "description": "Max emails (default 10)"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Unread emails"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "email-mcp",
+        "mcp_tool": "email.unread"
+      }
+    },
+    {
+      "id": "tool-msg-whatsapp-status",
+      "name": "whatsapp.status",
+      "description": "Check WhatsApp connection status.",
+      "inputs": [],
+      "output": {
+        "type": "object",
+        "description": "Connection status"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "whatsapp-mcp",
+        "mcp_tool": "whatsapp.status"
+      }
+    },
+    {
+      "id": "tool-msg-whatsapp-send",
+      "name": "whatsapp.send",
+      "description": "Send a WhatsApp message. Always confirm with user before calling.",
+      "inputs": [
+        {
+          "name": "to",
+          "type": "string",
+          "required": true,
+          "description": "Phone number or contact name"
+        },
+        {
+          "name": "message",
+          "type": "string",
+          "required": true,
+          "description": "Message text"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Send confirmation"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "whatsapp-mcp",
+        "mcp_tool": "whatsapp.send"
+      }
+    },
+    {
+      "id": "tool-msg-whatsapp-unread",
+      "name": "whatsapp.unread",
+      "description": "Get unread WhatsApp messages.",
+      "inputs": [
+        {
+          "name": "limit",
+          "type": "number",
+          "required": false,
+          "description": "Max messages (default 20)"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Unread messages"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "whatsapp-mcp",
+        "mcp_tool": "whatsapp.unread"
+      }
+    }
+  ],
+  "connectors": [
+    "mobile-device-mcp",
+    "email-mcp",
+    "whatsapp-mcp",
+    "memory-mcp",
+    "personal-assistant-ui-mcp"
+  ],
+  "engine": {
+    "model": "claude-sonnet",
+    "temperature": 0.4,
+    "rv2": {
+      "max_iterations": 15
+    }
+  },
+  "grant_mappings": [],
+  "access_policy": {
+    "rules": [
+      {
+        "tools": [
+          "*"
+        ],
+        "requires_grants": [
+          "pa.verified_user"
+        ],
+        "effect": "allow"
+      }
+    ]
+  },
+  "scenarios": [
+    {
+      "id": "default-scenario",
+      "title": "Default Scenario",
+      "steps": [
+        "Call any tool"
+      ],
+      "expected_outcome": "Success"
+    }
+  ],
+  "intents": {
+    "supported": [
+      {
+        "id": "default-intent",
+        "description": "Default intent",
+        "examples": [
+          "Hi"
+        ]
+      }
+    ]
+  },
+  "policy": {
+    "guardrails": {
+      "never": [],
+      "always": []
+    }
+  }
+}

@@ -1,0 +1,363 @@
+{
+  "id": "life-manager",
+  "name": "Life Manager",
+  "version": "1.0.0",
+  "phase": "DEPLOYED",
+  "problem": {
+    "statement": "Busy professionals need a personal assistant that understands their schedule, relationships, and daily routines — and remembers their preferences across conversations.",
+    "context": "Voice-first personal assistant managing calendar, contacts, messaging, memory, and proactive daily intelligence for a single user.",
+    "goals": [
+      "Give smart daily briefings when asked 'How is my day?'",
+      "Handle messaging like 'Tell Sarah I'm running late'",
+      "Schedule events conversationally",
+      "Surface proactive insights like upcoming birthdays or scheduling conflicts",
+      "Route memory requests to memory-keeper and briefing requests to daily-intel"
+    ]
+  },
+  "role": {
+    "name": "Personal Life Manager",
+    "persona": "You are a warm, efficient personal assistant who knows the user intimately. You speak naturally, like a trusted friend who happens to be incredibly organized.\n\nWhen asked about the day, give a smart briefing: highlight key events, flag potential issues (overlapping meetings, travel time needed), and mention important dates.\n\nMESSAGING DELEGATION: For messaging requests ('tell X...', 'send a message to...', 'text Mom...'), the orchestrator now routes these to the messaging-agent specialist. You retain device.message.send for edge cases, but primary messaging goes through messaging-agent for relationship-aware tone adaptation.\n\nMEMORY-AWARE SCHEDULING:\nBefore creating any calendar event, ALWAYS check the user's stored preferences first using memory.recall (search for 'schedule', 'meetings', 'calendar', 'time'). If a preference conflicts (e.g., 'no meetings before 10am' and the event is at 9am), warn the user and ask for confirmation before proceeding.\n\nWhen asked about weather or commute, answer directly using your weather and commute tools.\n\nIMPORTANT ROUTING RULES:\n- When the user says 'remember...', 'don't ever...', 'I prefer...', 'always...', 'what did I tell you about...' — hand off to memory-keeper.\n- When the user asks for 'morning briefing', 'how is my day', 'what should I know today', 'daily summary' — hand off to daily-intel.\n- For everything else (calendar queries, messaging, contacts, location, weather, commute) — handle directly with your tools.",
+    "goals": [
+      "Provide smart daily briefings from calendar data",
+      "Handle messaging naturally — 'tell Sarah I'll be late' becomes a real message",
+      "Schedule events conversationally",
+      "Route memory operations to memory-keeper worker",
+      "Route briefing requests to daily-intel worker"
+    ],
+    "limitations": [
+      "Cannot make purchases or financial transactions",
+      "Cannot access email content — only calendar and contacts",
+      "Must confirm with user before sending any messages"
+    ],
+    "communication_style": {
+      "tone": "warm",
+      "verbosity": "concise"
+    }
+  },
+  "tools": [
+    {
+      "id": "tool-cal-today",
+      "name": "device.calendar.today",
+      "description": "Get all calendar events for today. Returns titles, times, locations, attendees, and notes.",
+      "inputs": [],
+      "output": {
+        "type": "object",
+        "description": "Today's events with times, locations, attendees"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.calendar.today"
+      }
+    },
+    {
+      "id": "tool-cal-upcoming",
+      "name": "device.calendar.upcoming",
+      "description": "Get upcoming calendar events for the next N days (tomorrow and beyond).",
+      "inputs": [
+        {
+          "name": "days",
+          "type": "number",
+          "required": false,
+          "description": "Days to look ahead (default 3)"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Upcoming events across multiple days"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.calendar.upcoming"
+      }
+    },
+    {
+      "id": "tool-cal-create",
+      "name": "device.calendar.create",
+      "description": "Create a new calendar event.",
+      "inputs": [
+        {
+          "name": "title",
+          "type": "string",
+          "required": true,
+          "description": "Event title"
+        },
+        {
+          "name": "date",
+          "type": "string",
+          "required": true,
+          "description": "Date YYYY-MM-DD"
+        },
+        {
+          "name": "start_time",
+          "type": "string",
+          "required": true,
+          "description": "Start time HH:MM"
+        },
+        {
+          "name": "end_time",
+          "type": "string",
+          "required": false,
+          "description": "End time HH:MM"
+        },
+        {
+          "name": "location",
+          "type": "string",
+          "required": false,
+          "description": "Location"
+        },
+        {
+          "name": "notes",
+          "type": "string",
+          "required": false,
+          "description": "Notes"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Created event confirmation"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.calendar.create"
+      }
+    },
+    {
+      "id": "tool-contacts-search",
+      "name": "device.contacts.search",
+      "description": "Search contacts by name, relationship, or keyword.",
+      "inputs": [
+        {
+          "name": "query",
+          "type": "string",
+          "required": true,
+          "description": "Search query"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Matching contacts"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.contacts.search"
+      }
+    },
+    {
+      "id": "tool-contacts-get",
+      "name": "device.contacts.get",
+      "description": "Get full contact details by name or ID.",
+      "inputs": [
+        {
+          "name": "contact_id",
+          "type": "string",
+          "required": true,
+          "description": "Contact name or ID"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Full contact details"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.contacts.get"
+      }
+    },
+    {
+      "id": "tool-location",
+      "name": "device.location.current",
+      "description": "Get user's current location based on time of day.",
+      "inputs": [],
+      "output": {
+        "type": "object",
+        "description": "Current location with place name and address"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.location.current"
+      }
+    },
+    {
+      "id": "tool-msg-send",
+      "name": "device.message.send",
+      "description": "Send SMS/message to a contact. Always confirm with user before sending.",
+      "inputs": [
+        {
+          "name": "contact_name",
+          "type": "string",
+          "required": true,
+          "description": "Contact name"
+        },
+        {
+          "name": "message",
+          "type": "string",
+          "required": true,
+          "description": "Message text"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Send confirmation"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.message.send"
+      }
+    },
+    {
+      "id": "tool-weather-current",
+      "name": "device.weather.current",
+      "description": "Get current weather conditions — temperature, conditions, humidity, wind.",
+      "inputs": [],
+      "output": {
+        "type": "object",
+        "description": "Current weather"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.weather.current"
+      }
+    },
+    {
+      "id": "tool-weather-forecast",
+      "name": "device.weather.forecast",
+      "description": "Get weather forecast for the next N days.",
+      "inputs": [
+        {
+          "name": "days",
+          "type": "number",
+          "required": false,
+          "description": "Days to forecast (default 3)"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Multi-day forecast"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.weather.forecast"
+      }
+    },
+    {
+      "id": "tool-commute",
+      "name": "device.commute.estimate",
+      "description": "Estimate travel time between two locations.",
+      "inputs": [
+        {
+          "name": "from",
+          "type": "string",
+          "required": true,
+          "description": "Starting location"
+        },
+        {
+          "name": "to",
+          "type": "string",
+          "required": true,
+          "description": "Destination"
+        },
+        {
+          "name": "mode",
+          "type": "string",
+          "required": false,
+          "description": "Travel mode: driving, transit, walking"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Commute estimate"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.commute.estimate"
+      }
+    },
+    {
+      "id": "tool-mem-recall",
+      "name": "memory.recall",
+      "description": "Check user preferences before scheduling or taking actions. Search stored memories for rules, likes, and instructions.",
+      "inputs": [
+        {
+          "name": "query",
+          "type": "string",
+          "required": true,
+          "description": "Search query"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "required": false,
+          "description": "Filter by type: preference, fact, instruction, pattern"
+        },
+        {
+          "name": "limit",
+          "type": "number",
+          "required": false,
+          "description": "Max results (default 10)"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Matching memories"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "memory-mcp",
+        "mcp_tool": "memory.recall"
+      }
+    }
+  ],
+  "connectors": [
+    "mobile-device-mcp",
+    "memory-mcp",
+    "personal-assistant-ui-mcp"
+  ],
+  "grant_mappings": [],
+  "access_policy": {
+    "rules": [
+      {
+        "tools": [
+          "*"
+        ],
+        "effect": "allow"
+      }
+    ]
+  },
+  "scenarios": [
+    {
+      "id": "default-scenario",
+      "title": "Default Scenario",
+      "steps": [
+        "Call any tool"
+      ],
+      "expected_outcome": "Success"
+    }
+  ],
+  "intents": {
+    "supported": [
+      {
+        "id": "default-intent",
+        "description": "Default intent",
+        "examples": [
+          "Hi"
+        ]
+      }
+    ]
+  },
+  "policy": {
+    "guardrails": {
+      "never": [],
+      "always": []
+    }
+  }
+}

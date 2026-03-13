@@ -1,0 +1,402 @@
+{
+  "id": "daily-intel",
+  "name": "Daily Intelligence",
+  "version": "1.1.0",
+  "phase": "DEPLOYED",
+  "problem": {
+    "statement": "Users need a proactive daily briefing that doesn't just list events but analyzes their day intelligently.",
+    "context": "Proactive daily intelligence worker skill that analyzes calendar events, contacts, and stored preferences to generate smart briefings with conflict detection, travel time warnings, birthday reminders, and personalized insights.",
+    "goals": [
+      "Generate smart morning briefings with calendar analysis",
+      "Detect scheduling conflicts and tight transitions",
+      "Remind about upcoming birthdays and important dates from contacts",
+      "Check user preferences and flag violations (e.g., meeting before 10am when user prefers no early meetings)",
+      "Provide actionable insights, not just event lists"
+    ]
+  },
+  "role": {
+    "name": "Daily Intelligence Analyst",
+    "persona": "You are a proactive daily intelligence analyst. You don't just list the user's schedule — you ANALYZE it.\n\nCONTEXT FROM ORCHESTRATOR:\nThe orchestrator may pass context in the handoff summary — preferences, rules, or specific requests. Check it and factor it in.\n\nWhen generating a briefing, gather ALL data first (call in parallel where possible):\n1. Get today's calendar events\n2. Get upcoming events (next 2-3 days)\n3. Get current weather + forecast\n4. Check for unread emails (email.unread) and WhatsApp messages (whatsapp.unread) — use integrations.check first to see if connected, skip silently if not\n5. Check user's stored preferences (memory.recall with queries like 'schedule preferences', 'meeting preferences', 'morning routine')\n5. Check taught rules (memory.rules.match with situation 'daily briefing morning routine') — user may have taught rules like 'never schedule before 10am' or 'remind me about medications'\n6. Check upcoming birthdays from contacts\n7. Check last contact dates for close relationships (device.contacts.lastContact for family/friends) — flag if user hasn't talked to someone important in >10 days\n8. Estimate commute times between events with different locations\n\nThen analyze for:\n- RULE VIOLATIONS: If taught rules conflict with today's schedule, flag them prominently. Example: user has rule 'no meetings before 10am' but there's a 9am standup → 'Heads up: You have a 9am meeting, but your rule says no meetings before 10am.'\n- Weather impact: Rain? Suggest umbrella. Hot outdoor event?\n- Schedule conflicts or back-to-back meetings with no buffer\n- Tight transitions: commute estimates vs available time between events\n- Birthday reminders (today and upcoming week)\n- Relationship care: 'You haven't talked to David in 14 days — want to reach out?'\n- Important upcoming events (anniversaries, appointments)\n- Commute advice: 'Leave by X:XX to make your Y:00 meeting'\n\nPresent findings as a structured briefing:\n1. Weather summary (one line)\n2. Key alerts (rule violations, conflicts, birthdays, travel warnings, relationship nudges)\n3. Today's schedule with commute notes\n4. Look-ahead (next 2-3 days highlights)\n\nBe proactive — suggest actions when appropriate. Keep it concise but insightful.",
+    "goals": [
+      "Analyze calendar for conflicts, gaps, and transition issues",
+      "Cross-reference contacts for birthdays and important dates",
+      "Check preferences to flag violations",
+      "Generate actionable insights, not just event dumps"
+    ],
+    "limitations": [
+      "Cannot create events or send messages — only analyze and advise",
+      "Can check unread emails and WhatsApp messages for briefing summaries"
+    ],
+    "communication_style": {
+      "tone": "warm",
+      "verbosity": "detailed"
+    }
+  },
+  "tools": [
+    {
+      "id": "tool-intel-cal-today",
+      "name": "device.calendar.today",
+      "description": "Get all calendar events for today.",
+      "inputs": [],
+      "output": {
+        "type": "object",
+        "description": "Today's events"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.calendar.today"
+      }
+    },
+    {
+      "id": "tool-intel-cal-upcoming",
+      "name": "device.calendar.upcoming",
+      "description": "Get upcoming calendar events for the next N days.",
+      "inputs": [
+        {
+          "name": "days",
+          "type": "number",
+          "required": false,
+          "description": "Days ahead (default 3)"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Upcoming events"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.calendar.upcoming"
+      }
+    },
+    {
+      "id": "tool-intel-contacts-search",
+      "name": "device.contacts.search",
+      "description": "Search contacts by name, relationship, or keyword. Use to find birthdays and important dates.",
+      "inputs": [
+        {
+          "name": "query",
+          "type": "string",
+          "required": true,
+          "description": "Search query"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Matching contacts"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.contacts.search"
+      }
+    },
+    {
+      "id": "tool-intel-location",
+      "name": "device.location.current",
+      "description": "Get user's current location for commute/travel estimates.",
+      "inputs": [],
+      "output": {
+        "type": "object",
+        "description": "Current location"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.location.current"
+      }
+    },
+    {
+      "id": "tool-intel-recall",
+      "name": "memory.recall",
+      "description": "Recall user preferences and stored memories to personalize the briefing.",
+      "inputs": [
+        {
+          "name": "query",
+          "type": "string",
+          "required": true,
+          "description": "Search query"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "required": false,
+          "description": "Filter: preference, fact, instruction"
+        },
+        {
+          "name": "limit",
+          "type": "number",
+          "required": false,
+          "description": "Max results"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Matching memories"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "memory-mcp",
+        "mcp_tool": "memory.recall"
+      }
+    },
+    {
+      "id": "tool-intel-weather-current",
+      "name": "device.weather.current",
+      "description": "Get current weather conditions — temperature, conditions, humidity, wind, UV index.",
+      "inputs": [],
+      "output": {
+        "type": "object",
+        "description": "Current weather conditions"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.weather.current"
+      }
+    },
+    {
+      "id": "tool-intel-weather-forecast",
+      "name": "device.weather.forecast",
+      "description": "Get weather forecast for the next N days — highs, lows, conditions, rain probability.",
+      "inputs": [
+        {
+          "name": "days",
+          "type": "number",
+          "required": false,
+          "description": "Days to forecast (default 3)"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Multi-day weather forecast"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.weather.forecast"
+      }
+    },
+    {
+      "id": "tool-intel-commute",
+      "name": "device.commute.estimate",
+      "description": "Estimate travel time between two locations. Use to check if user has enough time between events.",
+      "inputs": [
+        {
+          "name": "from",
+          "type": "string",
+          "required": true,
+          "description": "Starting location"
+        },
+        {
+          "name": "to",
+          "type": "string",
+          "required": true,
+          "description": "Destination"
+        },
+        {
+          "name": "mode",
+          "type": "string",
+          "required": false,
+          "description": "Travel mode: driving, transit, walking"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Commute estimate with duration and distance"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.commute.estimate"
+      }
+    },
+    {
+      "id": "tool-intel-birthdays",
+      "name": "device.contacts.birthdays",
+      "description": "Get contacts with upcoming birthdays in the next N days.",
+      "inputs": [
+        {
+          "name": "days",
+          "type": "number",
+          "required": false,
+          "description": "Look ahead days (default 30)"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Upcoming birthdays with days until"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.contacts.birthdays"
+      }
+    },
+    {
+      "id": "tool-intel-rules-match",
+      "name": "memory.rules.match",
+      "description": "Check taught rules matching the current situation. Use during briefing to flag rule violations (e.g., 'no meetings before 10am' vs a 9am event).",
+      "inputs": [
+        {
+          "name": "situation",
+          "type": "string",
+          "required": true,
+          "description": "Situation to match against taught rules"
+        },
+        {
+          "name": "limit",
+          "type": "number",
+          "required": false,
+          "description": "Max rules to return"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Matching rules with relevance scores"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "memory-mcp",
+        "mcp_tool": "memory.rules.match"
+      }
+    },
+    {
+      "id": "tool-intel-last-contact",
+      "name": "device.contacts.lastContact",
+      "description": "Check when user last communicated with a contact. Flag if it's been too long for close relationships.",
+      "inputs": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "description": "Contact name"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Days since last contact with suggestion"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.contacts.lastContact"
+      }
+    },
+    {
+      "id": "tool-intel-integrations-check",
+      "name": "integrations.check",
+      "description": "Check if email/WhatsApp is connected before trying to include in briefing.",
+      "inputs": [
+        {
+          "name": "channel",
+          "type": "string",
+          "required": true,
+          "description": "Channel ID"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Integration details"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "integrations.check"
+      }
+    },
+    {
+      "id": "tool-intel-email-unread",
+      "name": "email.unread",
+      "description": "Get unread emails to summarize in daily briefing.",
+      "inputs": [
+        {
+          "name": "limit",
+          "type": "number",
+          "required": false,
+          "description": "Max emails (default 10)"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Unread emails"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "email-mcp",
+        "mcp_tool": "email.unread"
+      }
+    },
+    {
+      "id": "tool-intel-whatsapp-unread",
+      "name": "whatsapp.unread",
+      "description": "Get unread WhatsApp messages to summarize in daily briefing.",
+      "inputs": [
+        {
+          "name": "limit",
+          "type": "number",
+          "required": false,
+          "description": "Max messages (default 20)"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Unread WhatsApp messages"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "whatsapp-mcp",
+        "mcp_tool": "whatsapp.unread"
+      }
+    }
+  ],
+  "connectors": [
+    "mobile-device-mcp",
+    "email-mcp",
+    "whatsapp-mcp",
+    "memory-mcp",
+    "personal-assistant-ui-mcp"
+  ],
+  "grant_mappings": [],
+  "access_policy": {
+    "rules": [
+      {
+        "tools": [
+          "*"
+        ],
+        "requires_grants": [
+          "pa.verified_user"
+        ],
+        "effect": "allow"
+      }
+    ]
+  },
+  "scenarios": [
+    {
+      "id": "default-scenario",
+      "title": "Default Scenario",
+      "steps": [
+        "Call any tool"
+      ],
+      "expected_outcome": "Success"
+    }
+  ],
+  "intents": {
+    "supported": [
+      {
+        "id": "default-intent",
+        "description": "Default intent",
+        "examples": [
+          "Hi"
+        ]
+      }
+    ]
+  },
+  "policy": {
+    "guardrails": {
+      "never": [],
+      "always": []
+    }
+  }
+}

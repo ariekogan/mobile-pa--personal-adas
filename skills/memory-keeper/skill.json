@@ -1,13 +1,8 @@
 {
   "id": "memory-keeper",
   "name": "Memory Keeper",
-  "description": "Personal assistants forget everything between conversations. Users need persistent memory for preferences, facts, and instructions.",
   "version": "1.0.0",
   "phase": "DEPLOYED",
-  "ui_capable": false,
-  "connectors": [
-    "memory-mcp"
-  ],
   "problem": {
     "statement": "Personal assistants forget everything between conversations. Users need persistent memory for preferences, facts, and instructions.",
     "context": "Persistent memory worker skill that stores and recalls user preferences, personal facts, standing instructions, and learned patterns using SQLite-backed storage.",
@@ -18,10 +13,27 @@
       "Recall relevant memories when asked 'what did I tell you about...'"
     ]
   },
+  "role": {
+    "name": "Memory Keeper",
+    "persona": "You are the user's persistent memory — you never forget. When the user tells you to remember something, you categorize it properly:\n\n- PREFERENCE: Rules, likes, dislikes ('no meetings before 10am', 'I prefer window seats')\n- FACT: Personal information ('wife's name is Sarah', 'allergic to peanuts', 'Emma's soccer is on Tuesdays')\n- INSTRUCTION: Standing orders ('always remind me about medications', 'never schedule over lunch')\n- PATTERN: Behavioral patterns ('usually leaves work at 5:30')\n\nAlways confirm what you stored. When asked to recall, search intelligently and present findings clearly. If the user wants to update or remove a memory, do it immediately.\n\nTag memories with relevant keywords for better recall later.",
+    "goals": [
+      "Store memories with proper categorization and tags",
+      "Recall memories intelligently using search",
+      "Update and delete memories on request",
+      "Always confirm what was stored/recalled"
+    ],
+    "limitations": [
+      "Cannot access calendar or contacts directly — only memory store",
+      "Cannot send messages or create events"
+    ],
+    "communication_style": {
+      "tone": "warm",
+      "verbosity": "concise"
+    }
+  },
   "tools": [
     {
       "id": "tool-mem-store",
-      "id_status": "permanent",
       "name": "memory.store",
       "description": "Store a new memory — preference, fact, instruction, or pattern. Use 'preference' for likes/dislikes/rules. Use 'fact' for personal info. Use 'instruction' for standing orders. Use 'pattern' for behavioral patterns.",
       "inputs": [
@@ -58,35 +70,10 @@
         "type": "mcp_bridge",
         "connection_id": "memory-mcp",
         "mcp_tool": "memory.store"
-      },
-      "policy": {
-        "allowed": "always"
-      },
-      "mock": {
-        "enabled": true,
-        "mode": "examples",
-        "examples": [
-          {
-            "id": "tool-memory-store-auto",
-            "input": {
-              "type": "standard",
-              "content": "example"
-            },
-            "output": {
-              "success": true,
-              "data": {}
-            },
-            "description": "Auto-generated example for memory.store"
-          }
-        ]
-      },
-      "security": {
-        "classification": "public"
       }
     },
     {
       "id": "tool-mem-recall",
-      "id_status": "permanent",
       "name": "memory.recall",
       "description": "Recall memories by search query. Searches content and tags. Use when user asks 'what did I tell you about...', 'do you remember...', or to check preferences before actions.",
       "inputs": [
@@ -117,39 +104,10 @@
         "type": "mcp_bridge",
         "connection_id": "memory-mcp",
         "mcp_tool": "memory.recall"
-      },
-      "policy": {
-        "allowed": "always"
-      },
-      "mock": {
-        "enabled": true,
-        "mode": "examples",
-        "examples": [
-          {
-            "id": "tool-memory-recall-auto",
-            "input": {
-              "query": "search term"
-            },
-            "output": {
-              "results": [
-                {
-                  "id": 1,
-                  "name": "Example item"
-                }
-              ],
-              "total_count": 1
-            },
-            "description": "Auto-generated example for memory.recall"
-          }
-        ]
-      },
-      "security": {
-        "classification": "public"
       }
     },
     {
       "id": "tool-mem-list",
-      "id_status": "permanent",
       "name": "memory.list",
       "description": "List all stored memories, optionally filtered by type. Use for 'what are my preferences?', 'show all my facts'.",
       "inputs": [
@@ -180,37 +138,10 @@
         "type": "mcp_bridge",
         "connection_id": "memory-mcp",
         "mcp_tool": "memory.list"
-      },
-      "policy": {
-        "allowed": "always"
-      },
-      "mock": {
-        "enabled": true,
-        "mode": "examples",
-        "examples": [
-          {
-            "id": "tool-memory-list-auto",
-            "input": {},
-            "output": {
-              "results": [
-                {
-                  "id": 1,
-                  "name": "Example item"
-                }
-              ],
-              "total_count": 1
-            },
-            "description": "Auto-generated example for memory.list"
-          }
-        ]
-      },
-      "security": {
-        "classification": "public"
       }
     },
     {
       "id": "tool-mem-update",
-      "id_status": "permanent",
       "name": "memory.update",
       "description": "Update an existing memory by ID. Use when user corrects a stored memory.",
       "inputs": [
@@ -247,35 +178,10 @@
         "type": "mcp_bridge",
         "connection_id": "memory-mcp",
         "mcp_tool": "memory.update"
-      },
-      "policy": {
-        "allowed": "always"
-      },
-      "mock": {
-        "enabled": true,
-        "mode": "examples",
-        "examples": [
-          {
-            "id": "tool-memory-update-auto",
-            "input": {
-              "id": 1
-            },
-            "output": {
-              "id": 1,
-              "status": "updated",
-              "message": "Updated successfully."
-            },
-            "description": "Auto-generated example for memory.update"
-          }
-        ]
-      },
-      "security": {
-        "classification": "public"
       }
     },
     {
       "id": "tool-mem-delete",
-      "id_status": "permanent",
       "name": "memory.delete",
       "description": "Delete a memory by ID. Use when user says 'forget that' or 'remove that preference'.",
       "inputs": [
@@ -294,306 +200,13 @@
         "type": "mcp_bridge",
         "connection_id": "memory-mcp",
         "mcp_tool": "memory.delete"
-      },
-      "policy": {
-        "allowed": "always"
-      },
-      "mock": {
-        "enabled": true,
-        "mode": "examples",
-        "examples": [
-          {
-            "id": "tool-memory-delete-auto",
-            "input": {
-              "id": 1
-            },
-            "output": {
-              "success": true,
-              "message": "Operation completed successfully."
-            },
-            "description": "Auto-generated example for memory.delete"
-          }
-        ]
-      },
-      "security": {
-        "classification": "public"
       }
     }
   ],
-  "intents": {
-    "supported": [
-      {
-        "id": "store",
-        "description": "Store a new memory — preference, fact, instruction, or pattern. Use 'preference' for likes/dislikes/rules. Use 'fact' for personal info. Use 'instruction' for standing orders. Use 'pattern' for behavioral patterns.",
-        "examples": [
-          "Store a new memory — preference, fact, instruction, or pattern. Use 'preference' for likes/dislikes/rules. Use 'fact' for personal info. Use 'instruction' for standing orders. Use 'pattern' for behavioral patterns.",
-          "I need to store a new memory — preference, fact, instruction, or pattern. Use 'preference' for likes/dislikes/rules. Use 'fact' for personal info. Use 'instruction' for standing orders. Use 'pattern' for behavioral patterns.",
-          "Can you store a new memory — preference, fact, instruction, or pattern. Use 'preference' for likes/dislikes/rules. Use 'fact' for personal info. Use 'instruction' for standing orders. Use 'pattern' for behavioral patterns.?",
-          "Please store a new memory — preference, fact, instruction, or pattern. Use 'preference' for likes/dislikes/rules. Use 'fact' for personal info. Use 'instruction' for standing orders. Use 'pattern' for behavioral patterns."
-        ],
-        "maps_to_workflow": "store_flow",
-        "entities": [
-          {
-            "name": "type",
-            "type": "string",
-            "required": false,
-            "extract_from": "message"
-          },
-          {
-            "name": "content",
-            "type": "string",
-            "required": false,
-            "extract_from": "message"
-          }
-        ]
-      },
-      {
-        "id": "recall",
-        "description": "Recall memories by search query. Searches content and tags. Use when user asks 'what did I tell you about...', 'do you remember...', or to check preferences before actions.",
-        "examples": [
-          "Recall memories by search query. Searches content and tags. Use when user asks 'what did I tell you about...', 'do you remember...', or to check preferences before actions.",
-          "I need to recall memories by search query. Searches content and tags. Use when user asks 'what did I tell you about...', 'do you remember...', or to check preferences before actions.",
-          "Can you recall memories by search query. Searches content and tags. Use when user asks 'what did I tell you about...', 'do you remember...', or to check preferences before actions.?",
-          "Please recall memories by search query. Searches content and tags. Use when user asks 'what did I tell you about...', 'do you remember...', or to check preferences before actions."
-        ],
-        "maps_to_workflow": "recall_flow",
-        "entities": [
-          {
-            "name": "query",
-            "type": "string",
-            "required": false,
-            "extract_from": "message"
-          }
-        ]
-      },
-      {
-        "id": "list",
-        "description": "List all stored memories, optionally filtered by type. Use for 'what are my preferences?', 'show all my facts'.",
-        "examples": [
-          "List all stored memories, optionally filtered by type. Use for 'what are my preferences?', 'show all my facts'.",
-          "I need to list all stored memories, optionally filtered by type. Use for 'what are my preferences?', 'show all my facts'.",
-          "Can you list all stored memories, optionally filtered by type. Use for 'what are my preferences?', 'show all my facts'.?",
-          "Please list all stored memories, optionally filtered by type. Use for 'what are my preferences?', 'show all my facts'."
-        ],
-        "maps_to_workflow": "list_flow"
-      },
-      {
-        "id": "update",
-        "description": "Update an existing memory by ID. Use when user corrects a stored memory.",
-        "examples": [
-          "Update an existing memory by ID. Use when user corrects a stored memory.",
-          "I need to update an existing memory by ID. Use when user corrects a stored memory.",
-          "Can you update an existing memory by ID. Use when user corrects a stored memory.?",
-          "Please update an existing memory by ID. Use when user corrects a stored memory."
-        ],
-        "maps_to_workflow": "update_flow",
-        "entities": [
-          {
-            "name": "id",
-            "type": "number",
-            "required": false,
-            "extract_from": "message"
-          }
-        ]
-      },
-      {
-        "id": "delete",
-        "description": "Delete a memory by ID. Use when user says 'forget that' or 'remove that preference'.",
-        "examples": [
-          "Delete a memory by ID. Use when user says 'forget that' or 'remove that preference'.",
-          "I need to delete a memory by ID. Use when user says 'forget that' or 'remove that preference'.",
-          "Can you delete a memory by ID. Use when user says 'forget that' or 'remove that preference'.?",
-          "Please delete a memory by ID. Use when user says 'forget that' or 'remove that preference'."
-        ],
-        "maps_to_workflow": "delete_flow",
-        "entities": [
-          {
-            "name": "id",
-            "type": "number",
-            "required": false,
-            "extract_from": "message"
-          }
-        ]
-      }
-    ],
-    "thresholds": {
-      "accept": 0.85,
-      "clarify": 0.6,
-      "reject": 0.4
-    },
-    "out_of_domain": {
-      "action": "redirect",
-      "message": "This request is outside my capabilities.",
-      "suggest_domains": []
-    }
-  },
-  "policy": {
-    "guardrails": {
-      "never": [],
-      "always": []
-    },
-    "workflows": [
-      {
-        "id": "store_flow",
-        "name": "Store a new memory — preference, fact, instruction, or pattern. Use 'preference' for likes/dislikes/rules. Use 'fact' for personal info. Use 'instruction' for standing orders. Use 'pattern' for behavioral patterns.",
-        "description": "Auto-generated workflow for store",
-        "trigger": "store",
-        "steps": [
-          "memory.store"
-        ],
-        "required": false,
-        "on_deviation": "warn"
-      },
-      {
-        "id": "recall_flow",
-        "name": "Recall memories by search query. Searches content and tags. Use when user asks 'what did I tell you about...', 'do you remember...', or to check preferences before actions.",
-        "description": "Auto-generated workflow for recall",
-        "trigger": "recall",
-        "steps": [
-          "memory.recall"
-        ],
-        "required": false,
-        "on_deviation": "warn"
-      },
-      {
-        "id": "list_flow",
-        "name": "List all stored memories, optionally filtered by type. Use for 'what are my preferences?', 'show all my facts'.",
-        "description": "Auto-generated workflow for list",
-        "trigger": "list",
-        "steps": [
-          "memory.list"
-        ],
-        "required": false,
-        "on_deviation": "warn"
-      },
-      {
-        "id": "update_flow",
-        "name": "Update an existing memory by ID. Use when user corrects a stored memory.",
-        "description": "Auto-generated workflow for update",
-        "trigger": "update",
-        "steps": [
-          "memory.update"
-        ],
-        "required": false,
-        "on_deviation": "warn"
-      },
-      {
-        "id": "delete_flow",
-        "name": "Delete a memory by ID. Use when user says 'forget that' or 'remove that preference'.",
-        "description": "Auto-generated workflow for delete",
-        "trigger": "delete",
-        "steps": [
-          "memory.delete"
-        ],
-        "required": false,
-        "on_deviation": "warn"
-      }
-    ],
-    "approvals": [],
-    "escalation": {
-      "enabled": false,
-      "conditions": []
-    }
-  },
-  "scenarios": [
-    {
-      "id": "store",
-      "title": "Store a new memory — preference, fact, instruction, or pattern. Use 'preference' for likes/dislikes/rules. Use 'fact' for personal info. Use 'instruction' for standing orders. Use 'pattern' for behavioral patterns.",
-      "description": "Test scenario for store",
-      "steps": [
-        "User says: \"Store a new memory — preference, fact, instruction, or pattern. Use 'preference' for likes/dislikes/rules. Use 'fact' for personal info. Use 'instruction' for standing orders. Use 'pattern' for behavioral patterns.\"",
-        "Agent calls memory.store — store a new memory — preference, fact, instruction, or pattern. use 'preference' for likes/dislikes/rules. use 'fact' for personal info. use 'instruction' for standing orders. use 'pattern' for behavioral patterns.",
-        "Agent presents results to the user"
-      ],
-      "expected_outcome": "User request for store is handled successfully."
-    },
-    {
-      "id": "recall",
-      "title": "Recall memories by search query. Searches content and tags. Use when user asks 'what did I tell you about...', 'do you remember...', or to check preferences before actions.",
-      "description": "Test scenario for recall",
-      "steps": [
-        "User says: \"Recall memories by search query. Searches content and tags. Use when user asks 'what did I tell you about...', 'do you remember...', or to check preferences before actions.\"",
-        "Agent calls memory.recall — recall memories by search query. searches content and tags. use when user asks 'what did i tell you about...', 'do you remember...', or to check preferences before actions.",
-        "Agent presents results to the user"
-      ],
-      "expected_outcome": "User request for recall is handled successfully."
-    },
-    {
-      "id": "list",
-      "title": "List all stored memories, optionally filtered by type. Use for 'what are my preferences?', 'show all my facts'.",
-      "description": "Test scenario for list",
-      "steps": [
-        "User says: \"List all stored memories, optionally filtered by type. Use for 'what are my preferences?', 'show all my facts'.\"",
-        "Agent calls memory.list — list all stored memories, optionally filtered by type. use for 'what are my preferences?', 'show all my facts'.",
-        "Agent presents results to the user"
-      ],
-      "expected_outcome": "User request for list is handled successfully."
-    },
-    {
-      "id": "update",
-      "title": "Update an existing memory by ID. Use when user corrects a stored memory.",
-      "description": "Test scenario for update",
-      "steps": [
-        "User says: \"Update an existing memory by ID. Use when user corrects a stored memory.\"",
-        "Agent calls memory.update — update an existing memory by id. use when user corrects a stored memory.",
-        "Agent presents results to the user"
-      ],
-      "expected_outcome": "User request for update is handled successfully."
-    },
-    {
-      "id": "delete",
-      "title": "Delete a memory by ID. Use when user says 'forget that' or 'remove that preference'.",
-      "description": "Test scenario for delete",
-      "steps": [
-        "User says: \"Delete a memory by ID. Use when user says 'forget that' or 'remove that preference'.\"",
-        "Agent calls memory.delete — delete a memory by id. use when user says 'forget that' or 'remove that preference'.",
-        "Agent presents results to the user"
-      ],
-      "expected_outcome": "User request for delete is handled successfully."
-    }
+  "connectors": [
+    "memory-mcp",
+    "personal-assistant-ui-mcp"
   ],
-  "role": {
-    "name": "Memory Keeper",
-    "persona": "You are the user's persistent memory — you never forget. When the user tells you to remember something, you categorize it properly:\n\n- PREFERENCE: Rules, likes, dislikes ('no meetings before 10am', 'I prefer window seats')\n- FACT: Personal information ('wife's name is Sarah', 'allergic to peanuts', 'Emma's soccer is on Tuesdays')\n- INSTRUCTION: Standing orders ('always remind me about medications', 'never schedule over lunch')\n- PATTERN: Behavioral patterns ('usually leaves work at 5:30')\n\nAlways confirm what you stored. When asked to recall, search intelligently and present findings clearly. If the user wants to update or remove a memory, do it immediately.\n\nTag memories with relevant keywords for better recall later.",
-    "goals": [
-      "Store memories with proper categorization and tags",
-      "Recall memories intelligently using search",
-      "Update and delete memories on request",
-      "Always confirm what was stored/recalled"
-    ],
-    "limitations": [
-      "Cannot access calendar or contacts directly — only memory store",
-      "Cannot send messages or create events"
-    ],
-    "communication_style": {
-      "tone": "warm",
-      "verbosity": "concise"
-    }
-  },
-  "engine": {
-    "model": "claude-sonnet-4-20250514",
-    "temperature": 0.3,
-    "rv2": {
-      "max_iterations": 10,
-      "iteration_timeout_ms": 30000,
-      "allow_parallel_tools": false,
-      "on_max_iterations": "fail"
-    },
-    "hlr": {
-      "enabled": true,
-      "critic": {
-        "enabled": false,
-        "strictness": "medium"
-      },
-      "reflection": {
-        "enabled": false,
-        "depth": "shallow"
-      }
-    },
-    "autonomy": {
-      "level": "autonomous"
-    }
-  },
   "grant_mappings": [],
   "access_policy": {
     "rules": [
@@ -608,6 +221,31 @@
       }
     ]
   },
-  "response_filters": [],
-  "triggers": []
+  "scenarios": [
+    {
+      "id": "default-scenario",
+      "title": "Default Scenario",
+      "steps": [
+        "Call any tool"
+      ],
+      "expected_outcome": "Success"
+    }
+  ],
+  "intents": {
+    "supported": [
+      {
+        "id": "default-intent",
+        "description": "Default intent",
+        "examples": [
+          "Hi"
+        ]
+      }
+    ]
+  },
+  "policy": {
+    "guardrails": {
+      "never": [],
+      "always": []
+    }
+  }
 }

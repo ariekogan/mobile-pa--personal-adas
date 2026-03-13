@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Schedule</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0e14;
+      color: #e8ecf1;
+      padding: 16px;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .header h1 { font-size: 18px; font-weight: 600; }
+    .live-badge {
+      display: none;
+      font-size: 10px;
+      color: #22c55e;
+      margin-left: 8px;
+    }
+    .date-label {
+      font-size: 13px;
+      color: #8b95a5;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    .tab-btn {
+      padding: 5px 12px;
+      border-radius: 16px;
+      border: 1px solid #1e2a3a;
+      background: transparent;
+      color: #8b95a5;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .tab-btn:hover { border-color: #2563eb; color: #e8ecf1; }
+    .tab-btn.active { background: #2563eb; border-color: #2563eb; color: white; }
+
+    /* Event Card */
+    .event-card {
+      background: #111820;
+      border: 1px solid #1e2a3a;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 10px;
+      display: flex;
+      gap: 14px;
+      transition: border-color 0.2s;
+    }
+    .event-card:hover { border-color: #2563eb; }
+    .event-card.in-progress { border-left: 3px solid #22c55e; }
+    .event-card.upcoming { border-left: 3px solid #2563eb; }
+    .event-card.past { border-left: 3px solid #374151; opacity: 0.6; }
+
+    .event-time {
+      min-width: 60px;
+      flex-shrink: 0;
+    }
+    .event-start {
+      font-size: 14px;
+      font-weight: 600;
+      color: #e8ecf1;
+    }
+    .event-end {
+      font-size: 12px;
+      color: #6b7a8d;
+    }
+    .event-duration {
+      font-size: 11px;
+      color: #4a5568;
+      margin-top: 2px;
+    }
+
+    .event-details { flex: 1; }
+    .event-title {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+    .event-location {
+      font-size: 12px;
+      color: #818cf8;
+      margin-bottom: 2px;
+    }
+    .event-attendees {
+      font-size: 11px;
+      color: #6b7a8d;
+    }
+    .event-notes {
+      font-size: 12px;
+      color: #6b7a8d;
+      margin-top: 4px;
+      font-style: italic;
+    }
+
+    .event-status {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      align-self: flex-start;
+      flex-shrink: 0;
+    }
+    .status-live { background: #1a2e1f; color: #22c55e; }
+    .status-next { background: #1a1f2e; color: #818cf8; }
+
+    /* Weather Strip */
+    .weather-strip {
+      background: #111820;
+      border: 1px solid #1e2a3a;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .weather-temp {
+      font-size: 22px;
+      font-weight: 600;
+    }
+    .weather-info {
+      flex: 1;
+    }
+    .weather-cond { font-size: 13px; }
+    .weather-detail { font-size: 11px; color: #6b7a8d; }
+
+    /* Empty State */
+    .empty {
+      text-align: center;
+      padding: 48px 16px;
+      color: #6b7a8d;
+    }
+    .empty h2 { font-size: 16px; margin-bottom: 8px; color: #8b95a5; }
+    .empty p { font-size: 13px; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script>
+    // ── 1. RENDER IMMEDIATELY — mobile-compatible ──
+    let todayEvents = [];
+    let upcomingEvents = [];
+    let weather = null;
+    let activeTab = "today";
+    let isLive = false;
+
+    render();
+
+    // ── 2. POSTMESSAGE BRIDGE ──
+    let counter = 0;
+    const pendingCalls = new Map();
+    let hostConnectorId = "mobile-device-mcp";
+
+    function unwrapResult(raw) {
+      if (raw?.content?.[0]?.type === "text") {
+        try { raw = JSON.parse(raw.content[0].text); } catch {}
+      }
+      if (raw?.content?.[0]?.type === "text") {
+        try { raw = JSON.parse(raw.content[0].text); } catch {}
+      }
+      return raw;
+    }
+
+    function mcpCall(tool, args, connectorId) {
+      connectorId = connectorId || hostConnectorId;
+      const requestId = "req_" + (++counter) + "_" + Date.now();
+      return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error("timeout")), 15000);
+        pendingCalls.set(requestId, {
+          resolve: (r) => { clearTimeout(timeout); resolve(unwrapResult(r)); },
+          reject:  (e) => { clearTimeout(timeout); reject(e); },
+        });
+        window.parent.postMessage({
+          source: "adas-plugin",
+          message: {
+            action: "mcp-call",
+            payload: {
+              requestId,
+              toolName: "cp.fe_api",
+              args: { method: "mcpProxy", params: { connectorId, tool, args } },
+            },
+          },
+        }, "*");
+      });
+    }
+
+    window.addEventListener("message", (ev) => {
+      const d = ev.data || {};
+      if (d.source !== "adas-host") return;
+      const msg = d.message;
+      if (msg?.type === "init") {
+        hostConnectorId = msg.payload?.connectorId || "mobile-device-mcp";
+        tryLiveData();
+      }
+      if (msg?.type === "mcp-result") {
+        const { requestId, result, error } = msg.payload || {};
+        const pending = pendingCalls.get(requestId);
+        if (pending) {
+          pendingCalls.delete(requestId);
+          if (error) pending.reject(new Error(error));
+          else pending.resolve(result);
+        }
+      }
+    });
+
+    // ── 3. SILENTLY try live data ──
+    async function tryLiveData() {
+      try {
+        const [todayResult, upcomingResult, weatherResult] = await Promise.all([
+          mcpCall("device.calendar.today", {}),
+          mcpCall("device.calendar.upcoming", { days: 3 }),
+          mcpCall("device.weather.current", {}),
+        ]);
+
+        todayEvents = todayResult?.events || todayResult?.data?.events || [];
+        if (Array.isArray(todayResult)) todayEvents = todayResult;
+
+        upcomingEvents = upcomingResult?.events || upcomingResult?.data?.events || [];
+        if (Array.isArray(upcomingResult)) upcomingEvents = upcomingResult;
+        // Flatten multi-day format
+        if (upcomingResult?.days) {
+          upcomingEvents = [];
+          upcomingResult.days.forEach(day => {
+            (day.events || []).forEach(e => {
+              upcomingEvents.push({ ...e, _date: day.date });
+            });
+          });
+        }
+
+        weather = weatherResult;
+        isLive = true;
+        render();
+      } catch {
+        // Silent failure on mobile
+      }
+    }
+
+    function switchTab(tab) {
+      activeTab = tab;
+      render();
+    }
+
+    setTimeout(() => { if (!isLive) tryLiveData(); }, 2000);
+
+    // ── Render ──
+    function render() {
+      const app = document.getElementById("app");
+      const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+      let weatherHtml = "";
+      if (weather) {
+        const temp = weather.temperature || weather.temp || "";
+        const cond = weather.conditions || weather.description || "";
+        const humidity = weather.humidity || "";
+        const wind = weather.wind || "";
+        weatherHtml = `
+          <div class="weather-strip">
+            <div class="weather-temp">${escHtml(String(temp))}</div>
+            <div class="weather-info">
+              <div class="weather-cond">${escHtml(String(cond))}</div>
+              <div class="weather-detail">${humidity ? 'Humidity: ' + escHtml(String(humidity)) : ''} ${wind ? '· Wind: ' + escHtml(String(wind)) : ''}</div>
+            </div>
+          </div>
+        `;
+      }
+
+      const events = activeTab === "today" ? todayEvents : upcomingEvents;
+
+      if (!isLive) {
+        app.innerHTML = `
+          <div class="header">
+            <h1>Schedule</h1>
+            <span class="date-label">${today}</span>
+          </div>
+          <div class="empty">
+            <h2>Today's Schedule</h2>
+            <p>Your calendar events, weather, and upcoming schedule<br>will appear here.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const eventCards = events.length === 0
+        ? `<div class="empty"><h2>No events ${activeTab === "today" ? "today" : "upcoming"}</h2><p>Your calendar is clear!</p></div>`
+        : events.map(ev => {
+          const start = ev.start_time || ev.start || "";
+          const end = ev.end_time || ev.end || "";
+          const title = ev.title || ev.name || "Untitled";
+          const location = ev.location || "";
+          const notes = ev.notes || "";
+          const attendees = (ev.attendees || []).join(", ");
+
+          return `
+            <div class="event-card">
+              <div class="event-time">
+                <div class="event-start">${escHtml(start)}</div>
+                <div class="event-end">${escHtml(end)}</div>
+              </div>
+              <div class="event-details">
+                <div class="event-title">${escHtml(title)}</div>
+                ${location ? `<div class="event-location">${escHtml(location)}</div>` : ''}
+                ${attendees ? `<div class="event-attendees">${escHtml(attendees)}</div>` : ''}
+                ${notes ? `<div class="event-notes">${escHtml(notes)}</div>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      app.innerHTML = `
+        <div class="header">
+          <h1>Schedule <span class="live-badge" style="display:inline">● LIVE</span></h1>
+          <span class="date-label">${today}</span>
+        </div>
+        ${weatherHtml}
+        <div class="tabs">
+          <button class="tab-btn ${activeTab === 'today' ? 'active' : ''}" onclick="switchTab('today')">
+            Today (${todayEvents.length})
+          </button>
+          <button class="tab-btn ${activeTab === 'upcoming' ? 'active' : ''}" onclick="switchTab('upcoming')">
+            Upcoming (${upcomingEvents.length})
+          </button>
+        </div>
+        ${eventCards}
+      `;
+    }
+
+    function escHtml(s) {
+      const d = document.createElement('div');
+      d.textContent = s || '';
+      return d.innerHTML;
+    }
+  </script>
+</body>
+</html>

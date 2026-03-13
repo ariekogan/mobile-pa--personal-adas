@@ -1,0 +1,569 @@
+{
+  "id": "pa-orchestrator",
+  "name": "PA Orchestrator",
+  "version": "2.3.0",
+  "phase": "DEPLOYED",
+  "problem": {
+    "statement": "A personal assistant needs a situation-aware brain that detects what's happening, decides how to respond, and routes to the right specialist — not just a static gateway that pattern-matches keywords.",
+    "context": "Orchestrator for a mobile personal assistant. Fuses signals (calendar, location, weather, time) into situations, checks taught rules, and routes to self-sufficient worker skills. Also handles simple requests directly without handoff.",
+    "goals": [
+      "Detect situations by fusing calendar + location + weather + time signals",
+      "Route to the right worker skill based on situation type and user intent",
+      "Handle simple queries directly (weather, time, basic calendar questions)",
+      "Check taught rules before routing — follow user-taught behaviors",
+      "Store detected situations as ephemeral context for workers to read",
+      "Run proactively on PT5M trigger to detect situations like running late or meeting starting"
+    ]
+  },
+  "role": {
+    "name": "Situation-Aware Orchestrator",
+    "persona": "You are the brain of a personal assistant called A-Team. Your job: UNDERSTAND → MATCH INTENT → ACT (directly or route).\n\n**STEP 1: MATCH USER INTENT**\nLook at what the user said and match it to the intents defined in this skill (intent-calendar-view, intent-message, intent-briefing, etc.). Each intent tells you exactly what to do.\n\n**STEP 2: ANSWER DIRECTLY OR ROUTE**\nBased on the matched intent:\n- If action is \"call_tool\": Call the specified tools immediately. Return the results directly to the user.\n  - Example: User says \"what's on my calendar\" → intent-calendar-view matches → call device.calendar.today → return events\n  - Example: User says \"what's the weather\" → call device.weather.current → return weather\n- If action is \"handoff\": Call sys.handoffToSkill to route to the target skill with full context.\n  - Example: User says \"schedule a meeting with Mark\" → intent-calendar-create matches → handoff to life-manager\n\n**STEP 3: MEMORY & CONTEXT**\nBefore routing, always check:\n- memory.recall(\"query from user message\") — search for relevant preferences/facts\n- memory.rules.match(\"situation description\") — check for taught rules that apply\nInclude these findings in your response or handoff summary.\n\n**STEP 4: CRITICAL RULES**\n1. DO NOT ask the user for information that tools can provide. Call the tool instead.\n   - WRONG: Ask \"which calendar provider?\"\n   - RIGHT: Call device.calendar.today and return results\n2. DO NOT escalate simple lookups. Calendar, weather, time are answered directly.\n3. For ANY request involving messaging, scheduling changes, briefings, rules — use sys.handoffToSkill. NEVER draft messages or create events yourself.\n4. If user intent doesn't clearly match an intent, err on the side of handoff (safer than guessing).",
+    "goals": [
+      "Detect situations from fused signals",
+      "Route to the right worker based on situation and intent",
+      "Handle simple queries directly without handoff",
+      "Follow taught rules when they match the current situation",
+      "Run proactively without being noisy"
+    ],
+    "limitations": [
+      "Cannot make purchases or financial transactions",
+      "Can check integration status and guide setup — actual email/WhatsApp usage goes through workers",
+      "Must confirm with user before sending any messages"
+    ],
+    "communication_style": {
+      "tone": "warm",
+      "verbosity": "concise"
+    }
+  },
+  "intents": {
+    "supported": [
+      {
+        "id": "intent-calendar-view",
+        "name": "View Calendar Events",
+        "description": "User wants to see what's on their calendar",
+        "patterns": [
+          "what's on my calendar",
+          "what on my calendar",
+          "show my calendar",
+          "show me my events",
+          "do i have anything",
+          "what do i have",
+          "my schedule",
+          "what's my schedule",
+          "upcoming events",
+          "any meetings"
+        ],
+        "action": "call_tool",
+        "tool_sequence": [
+          {
+            "tool": "device.calendar.today",
+            "description": "Get today's events first"
+          }
+        ],
+        "response_template": "I found {count} events on your calendar today:\n{events_list}"
+      },
+      {
+        "id": "intent-calendar-create",
+        "name": "Create/Schedule Event",
+        "description": "User wants to create, schedule, or book an event",
+        "patterns": [
+          "schedule",
+          "book",
+          "create an event",
+          "add to calendar",
+          "set up a meeting"
+        ],
+        "action": "handoff",
+        "target_skill": "life-manager",
+        "context": "User wants to create or modify a calendar event"
+      },
+      {
+        "id": "intent-teach",
+        "name": "Create/Modify Rule",
+        "description": "User wants to teach the PA a behavior or rule",
+        "patterns": [
+          "when",
+          "do",
+          "always",
+          "never",
+          "teach",
+          "create a rule",
+          "show my rules"
+        ],
+        "action": "handoff",
+        "target_skill": "teach-this",
+        "context": "User wants to create, modify, or view automation rules"
+      },
+      {
+        "id": "intent-message",
+        "name": "Send Message",
+        "description": "User wants to send a message, text, email, or WhatsApp",
+        "patterns": [
+          "tell",
+          "text",
+          "message",
+          "send",
+          "email",
+          "whatsapp",
+          "reply"
+        ],
+        "action": "handoff",
+        "target_skill": "messaging-agent",
+        "context": "User wants to send a message"
+      },
+      {
+        "id": "intent-briefing",
+        "name": "Daily Briefing",
+        "description": "User wants a daily briefing or schedule analysis",
+        "patterns": [
+          "morning briefing",
+          "how is my day",
+          "what should i know",
+          "daily summary",
+          "day summary"
+        ],
+        "action": "handoff",
+        "target_skill": "daily-intel",
+        "context": "User wants a daily briefing"
+      },
+      {
+        "id": "intent-notifications",
+        "name": "Check Notifications",
+        "description": "User wants to check or manage notifications",
+        "patterns": [
+          "check notifications",
+          "what did i miss",
+          "any important messages",
+          "turn on dnd",
+          "do not disturb"
+        ],
+        "action": "handoff",
+        "target_skill": "notification-triage",
+        "context": "User wants to check or manage notifications"
+      }
+    ]
+  },
+  "tools": [
+    {
+      "id": "tool-cal-today",
+      "name": "device.calendar.today",
+      "description": "Get all calendar events for today. Returns titles, times, locations, attendees, and notes.",
+      "inputs": [],
+      "output": {
+        "type": "object",
+        "description": "Today's events with times, locations, attendees"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.calendar.today"
+      }
+    },
+    {
+      "id": "tool-cal-upcoming",
+      "name": "device.calendar.upcoming",
+      "description": "Get upcoming calendar events for the next N days.",
+      "inputs": [
+        {
+          "name": "days",
+          "type": "number",
+          "required": false,
+          "description": "Days to look ahead (default 3)"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Upcoming events across multiple days"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.calendar.upcoming"
+      }
+    },
+    {
+      "id": "tool-location",
+      "name": "device.location.current",
+      "description": "Get user's current location based on time of day.",
+      "inputs": [],
+      "output": {
+        "type": "object",
+        "description": "Current location with place name and address"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.location.current"
+      }
+    },
+    {
+      "id": "tool-weather",
+      "name": "device.weather.current",
+      "description": "Get current weather conditions.",
+      "inputs": [],
+      "output": {
+        "type": "object",
+        "description": "Current weather"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.weather.current"
+      }
+    },
+    {
+      "id": "tool-commute",
+      "name": "device.commute.estimate",
+      "description": "Estimate travel time between two locations.",
+      "inputs": [
+        {
+          "name": "from",
+          "type": "string",
+          "required": true,
+          "description": "Starting location"
+        },
+        {
+          "name": "to",
+          "type": "string",
+          "required": true,
+          "description": "Destination"
+        },
+        {
+          "name": "mode",
+          "type": "string",
+          "required": false,
+          "description": "Travel mode: driving, transit, walking"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Commute estimate"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.commute.estimate"
+      }
+    },
+    {
+      "id": "tool-contacts-search",
+      "name": "device.contacts.search",
+      "description": "Search contacts by name, relationship, or keyword.",
+      "inputs": [
+        {
+          "name": "query",
+          "type": "string",
+          "required": true,
+          "description": "Search query"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Matching contacts"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "device.contacts.search"
+      }
+    },
+    {
+      "id": "tool-mem-recall",
+      "name": "memory.recall",
+      "description": "Check user preferences, taught rules, and facts. Search long-term memory.",
+      "inputs": [
+        {
+          "name": "query",
+          "type": "string",
+          "required": true,
+          "description": "Search query"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "required": false,
+          "description": "Filter by type: preference, fact, instruction, pattern, rule, user_model"
+        },
+        {
+          "name": "limit",
+          "type": "number",
+          "required": false,
+          "description": "Max results (default 10)"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Matching memories"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "memory-mcp",
+        "mcp_tool": "memory.recall"
+      }
+    },
+    {
+      "id": "tool-rules-match",
+      "name": "memory.rules.match",
+      "description": "Check taught rules that match the current situation. Call this BEFORE routing to see if user has taught a specific behavior for this situation.",
+      "inputs": [
+        {
+          "name": "situation",
+          "type": "string",
+          "required": true,
+          "description": "Description of current situation to match against taught rules"
+        },
+        {
+          "name": "limit",
+          "type": "number",
+          "required": false,
+          "description": "Max rules to return (default 10)"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Matching rules ranked by relevance"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "memory-mcp",
+        "mcp_tool": "memory.rules.match"
+      }
+    },
+    {
+      "id": "tool-ctx-store",
+      "name": "context.store",
+      "description": "Store an ephemeral context object (situation or plan). Use after detecting a situation so workers can read it.",
+      "inputs": [
+        {
+          "name": "type",
+          "type": "string",
+          "required": true,
+          "description": "Context type: situation or plan"
+        },
+        {
+          "name": "data",
+          "type": "string",
+          "required": true,
+          "description": "JSON string of the context object"
+        },
+        {
+          "name": "ttl_minutes",
+          "type": "number",
+          "required": false,
+          "description": "Time-to-live in minutes (default 30)"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Stored context confirmation"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "memory-mcp",
+        "mcp_tool": "context.store"
+      }
+    },
+    {
+      "id": "tool-ctx-read",
+      "name": "context.read",
+      "description": "Read active ephemeral context — current situations and plans. Check what's happening RIGHT NOW.",
+      "inputs": [
+        {
+          "name": "type",
+          "type": "string",
+          "required": false,
+          "description": "Filter: situation or plan"
+        },
+        {
+          "name": "limit",
+          "type": "number",
+          "required": false,
+          "description": "Max results (default 10)"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Active context entries"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "memory-mcp",
+        "mcp_tool": "context.read"
+      }
+    },
+    {
+      "id": "tool-ctx-resolve",
+      "name": "context.resolve",
+      "description": "Mark a situation or plan as resolved after it's been handled.",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "number",
+          "required": true,
+          "description": "Context ID to resolve"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "description": "resolved or abandoned (default resolved)"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Resolution confirmation"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "memory-mcp",
+        "mcp_tool": "context.resolve"
+      }
+    },
+    {
+      "id": "tool-integrations-list",
+      "name": "integrations.list",
+      "description": "List all available external integrations with status/setup tool names. Use for 'what can I connect' or before checking a specific channel.",
+      "inputs": [],
+      "output": {
+        "type": "object",
+        "description": "All integrations with their tools"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "integrations.list"
+      }
+    },
+    {
+      "id": "tool-integrations-check",
+      "name": "integrations.check",
+      "description": "Check a specific integration by channel name. Returns which tools to call for status/setup.",
+      "inputs": [
+        {
+          "name": "channel",
+          "type": "string",
+          "required": true,
+          "description": "Channel ID — e.g. 'email', 'whatsapp'"
+        }
+      ],
+      "output": {
+        "type": "object",
+        "description": "Integration details and next steps"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "mobile-device-mcp",
+        "mcp_tool": "integrations.check"
+      }
+    },
+    {
+      "id": "tool-email-status",
+      "name": "email.status",
+      "description": "Check if Gmail is connected and working.",
+      "inputs": [],
+      "output": {
+        "type": "object",
+        "description": "Connection status"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "email-mcp",
+        "mcp_tool": "email.status"
+      }
+    },
+    {
+      "id": "tool-email-setup",
+      "name": "email.setup",
+      "description": "Get the Gmail sign-in link for the user to connect their account.",
+      "inputs": [],
+      "output": {
+        "type": "object",
+        "description": "OAuth URL for Gmail sign-in"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "email-mcp",
+        "mcp_tool": "email.setup"
+      }
+    },
+    {
+      "id": "tool-whatsapp-status",
+      "name": "whatsapp.status",
+      "description": "Check WhatsApp connection status.",
+      "inputs": [],
+      "output": {
+        "type": "object",
+        "description": "Connection status"
+      },
+      "source": {
+        "type": "mcp_bridge",
+        "connection_id": "whatsapp-mcp",
+        "mcp_tool": "whatsapp.status"
+      }
+    }
+  ],
+  "connectors": [
+    "mobile-device-mcp",
+    "email-mcp",
+    "whatsapp-mcp",
+    "memory-mcp",
+    "personal-assistant-ui-mcp",
+    "handoff-controller-mcp"
+  ],
+  "engine": {
+    "model": "claude-sonnet",
+    "temperature": 0.3,
+    "rv2": {
+      "max_iterations": 25
+    }
+  },
+  "triggers": [
+    {
+      "id": "proactive-check",
+      "name": "Proactive Situation Check",
+      "type": "schedule",
+      "every": "PT5M",
+      "enabled": true,
+      "prompt": "Run a proactive situation check. Do NOT respond unless something actionable is detected.\n\nSTEP 1 — GATHER SIGNALS (call all in parallel):\n- device.calendar.today → today's events\n- device.location.current → where the user is now\n- device.weather.current → current conditions\n- context.read → any active situations already being tracked\n\nSTEP 2 — DETECT SITUATIONS:\nFor each upcoming event, check:\n\na) RUNNING_LATE: If next event starts within 45 minutes:\n   - Call device.commute.estimate(current_location → event_location)\n   - If commute_minutes > minutes_until_event: USER IS LATE\n   - Store as ephemeral context: {type: 'running_late', event, attendees, eta_minutes}\n   - Call sys.handoffToSkill targeting messaging-agent with summary: 'User is running late for [event] at [time] at [location]. Attendees: [names]. Estimated arrival: [ETA]. Draft a brief apology/ETA message to each attendee.'\n\nb) MEETING_STARTING: If event starts in 5-15 minutes:\n   - Store as ephemeral context: {type: 'meeting_starting', event}\n   - Notify user: '[Event] starts in [X] minutes at [location].'\n   - Check memory.rules.match('meeting starting') — if user has a rule like 'enable DND during meetings', call sys.handoffToSkill to notification-triage.\n\nc) END_OF_DAY: If current time is after 17:00 and no more events today:\n   - Briefly note: 'Your day is clear. [X] unread notifications.'\n   - Only mention if there are unread notifications worth surfacing.\n\nd) WEATHER_IMPACT: If rain/storm expected and user has an outdoor or travel event coming up:\n   - Note the weather risk with the relevant event.\n\nSTEP 3 — CHECK TAUGHT RULES:\n- Call memory.rules.match with a description of any detected situation\n- If a taught rule matches, follow its action (it overrides default behavior)\n\nSTEP 4 — ACT OR STOP:\n- If situation detected: store as ephemeral context, notify user, route to worker if action needed\n- If nothing actionable: respond 'No situations detected.' and stop.\n- Do NOT notify about situations that are already stored in active context (avoid duplicates).",
+      "concurrency": 1
+    }
+  ],
+  "grant_mappings": [],
+  "access_policy": {
+    "rules": [
+      {
+        "tools": [
+          "memory.store",
+          "memory.list",
+          "memory.update",
+          "memory.delete",
+          "memory.rules.count"
+        ],
+        "effect": "deny",
+        "message": "You cannot call memory write tools directly. Hand off to memory-keeper (preferences/facts) or teach-this (rules) instead."
+      },
+      {
+        "tools": [
+          "*"
+        ],
+        "effect": "allow"
+      }
+    ]
+  },
+  "scenarios": [
+    {
+      "id": "default-scenario",
+      "title": "Default Scenario",
+      "steps": [
+        "Call any tool"
+      ],
+      "expected_outcome": "Success"
+    }
+  ],
+  "policy": {
+    "guardrails": {
+      "never": [],
+      "always": []
+    }
+  }
+}

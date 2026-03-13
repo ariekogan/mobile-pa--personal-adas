@@ -31,7 +31,8 @@
         "mobile-device-mcp",
         "email-mcp",
         "whatsapp-mcp",
-        "memory-mcp"
+        "memory-mcp",
+        "personal-assistant-ui-mcp"
       ]
     },
     {
@@ -41,7 +42,8 @@
       "description": "General life assistant — calendar management, contacts, messaging, scheduling. Self-sufficient with all device tools.",
       "connectors": [
         "mobile-device-mcp",
-        "memory-mcp"
+        "memory-mcp",
+        "personal-assistant-ui-mcp"
       ]
     },
     {
@@ -50,7 +52,8 @@
       "role": "worker",
       "description": "Persistent memory — stores and recalls preferences, facts, instructions, and patterns across conversations.",
       "connectors": [
-        "memory-mcp"
+        "memory-mcp",
+        "personal-assistant-ui-mcp"
       ]
     },
     {
@@ -62,7 +65,8 @@
         "mobile-device-mcp",
         "email-mcp",
         "whatsapp-mcp",
-        "memory-mcp"
+        "memory-mcp",
+        "personal-assistant-ui-mcp"
       ]
     },
     {
@@ -74,7 +78,8 @@
         "mobile-device-mcp",
         "email-mcp",
         "whatsapp-mcp",
-        "memory-mcp"
+        "memory-mcp",
+        "personal-assistant-ui-mcp"
       ]
     },
     {
@@ -86,7 +91,8 @@
         "mobile-device-mcp",
         "email-mcp",
         "whatsapp-mcp",
-        "memory-mcp"
+        "memory-mcp",
+        "personal-assistant-ui-mcp"
       ]
     },
     {
@@ -95,7 +101,8 @@
       "role": "worker",
       "description": "Teachability engine — interprets natural language instructions, corrections, and demonstrations into structured automation rules. Creates rules that the orchestrator matches before routing.",
       "connectors": [
-        "memory-mcp"
+        "memory-mcp",
+        "personal-assistant-ui-mcp"
       ]
     }
   ],
@@ -249,6 +256,20 @@
         "notification-triage",
         "daily-intel"
       ]
+    },
+    {
+      "id": "personal-assistant-ui-mcp",
+      "ui_capable": true,
+      "description": "Solution-owned UI connector",
+      "used_by": [
+        "pa-orchestrator",
+        "life-manager",
+        "memory-keeper",
+        "daily-intel",
+        "messaging-agent",
+        "notification-triage",
+        "teach-this"
+      ]
     }
   ],
   "security_contracts": [
@@ -373,25 +394,5 @@
       "skipRecentMinutes": 30
     }
   },
-  "functional_connectors": [
-    {
-      "id": "device-bridge",
-      "type": "service",
-      "package": "@mobile-pa/device-bridge",
-      "capabilities": [
-        "calendar",
-        "contacts",
-        "location",
-        "battery",
-        "connectivity",
-        "notifications"
-      ],
-      "config_keys": [
-        "relay_url",
-        "device_id",
-        "api_key"
-      ],
-      "description": "Collects real device data (calendar, contacts, GPS, battery, notifications) and syncs to cloud relay. The relay feeds device-mcp connector which provides tools to PA skills."
-    }
-  ]
+  "functional_connectors": []
 }
