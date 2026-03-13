@@ -1,0 +1,10 @@
+{
+  "name": "personal-assistant-ui-mcp",
+  "version": "1.0.0",
+  "description": "UI plugins for Personal Assistant — dashboard and schedule panel",
+  "type": "module",
+  "main": "server.js",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1"
+  }
+}
