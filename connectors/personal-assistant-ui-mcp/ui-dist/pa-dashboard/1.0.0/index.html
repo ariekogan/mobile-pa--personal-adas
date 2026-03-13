@@ -6,63 +6,359 @@
 <title>Personal Assistant</title>
 <style>
   :root {
-    --bg: #0a0e14; --bg2: #111820; --bg3: #1a2230;
-    --border: rgba(255,255,255,0.08); --text: #e8ecf1; --text2: #8b95a5; --text3: #5a6577;
-    --accent: #2563eb; --green: #16a34a; --amber: #f59e0b; --purple: #8b5cf6; --red: #dc2626;
+    --bg: #0a0e14;
+    --bg2: #111820;
+    --bg3: #1a2230;
+    --border: rgba(255,255,255,0.08);
+    --text: #e8ecf1;
+    --text2: #8b95a5;
+    --text3: #5a6577;
+    --accent: #2563eb;
+    --green: #16a34a;
+    --amber: #f59e0b;
+    --purple: #8b5cf6;
+    --red: #dc2626;
     --radius: 10px;
   }
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); font-size: 13px; line-height: 1.5; height: 100vh; overflow-y: auto; -webkit-font-smoothing: antialiased; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.5;
+    height: 100vh;
+    overflow-y: auto;
+    -webkit-font-smoothing: antialiased;
+  }
   .container { padding: 16px; max-width: 480px; margin: 0 auto; }
+
+  /* Section */
   .section { margin-bottom: 20px; }
-  .section-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .section-header {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 10px; padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
   .section-icon { font-size: 16px; }
   .section-title { font-size: 14px; font-weight: 600; }
-  .section-badge { margin-left: auto; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; background: rgba(37,99,235,0.15); color: var(--accent); }
-  .event { display: flex; gap: 10px; padding: 10px; border-radius: var(--radius); margin-bottom: 6px; background: var(--bg2); border: 1px solid var(--border); transition: background 0.15s; }
+  .section-badge {
+    margin-left: auto; font-size: 11px; font-weight: 600;
+    padding: 2px 8px; border-radius: 10px;
+    background: rgba(37,99,235,0.15); color: var(--accent);
+  }
+
+  /* Event card */
+  .event {
+    display: flex; gap: 10px; padding: 10px;
+    border-radius: var(--radius); margin-bottom: 6px;
+    background: var(--bg2); border: 1px solid var(--border);
+    transition: background 0.15s;
+  }
   .event:hover { background: var(--bg3); }
-  .event-time { flex: 0 0 auto; text-align: right; min-width: 48px; font-size: 12px; font-weight: 600; color: var(--accent); padding-top: 1px; }
+  .event-time {
+    flex: 0 0 auto; text-align: right; min-width: 48px;
+    font-size: 12px; font-weight: 600; color: var(--accent);
+    padding-top: 1px;
+  }
   .event-body { flex: 1; min-width: 0; }
   .event-title { font-weight: 600; font-size: 13px; }
   .event-meta { font-size: 11px; color: var(--text2); margin-top: 2px; }
   .event-loc { display: flex; align-items: center; gap: 4px; }
-  .memory { padding: 10px; border-radius: var(--radius); margin-bottom: 6px; background: var(--bg2); border: 1px solid var(--border); }
+
+  /* Memory card */
+  .memory {
+    padding: 10px; border-radius: var(--radius); margin-bottom: 6px;
+    background: var(--bg2); border: 1px solid var(--border);
+  }
   .memory-top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-  .memory-type { font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; letter-spacing: 0.5px; }
+  .memory-type {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    padding: 2px 6px; border-radius: 4px; letter-spacing: 0.5px;
+  }
   .type-preference { background: rgba(139,92,246,0.15); color: var(--purple); }
   .type-fact { background: rgba(37,99,235,0.15); color: var(--accent); }
   .type-instruction { background: rgba(245,158,11,0.15); color: var(--amber); }
   .type-pattern { background: rgba(22,163,74,0.15); color: var(--green); }
   .memory-content { font-size: 13px; }
   .memory-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
-  .memory-tag { font-size: 10px; padding: 1px 6px; border-radius: 4px; background: var(--bg3); color: var(--text2); }
-  .contact { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--radius); margin-bottom: 4px; background: var(--bg2); border: 1px solid var(--border); }
-  .contact-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .memory-tag {
+    font-size: 10px; padding: 1px 6px; border-radius: 4px;
+    background: var(--bg3); color: var(--text2);
+  }
+
+  /* Contact card */
+  .contact {
+    display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+    border-radius: var(--radius); margin-bottom: 4px;
+    background: var(--bg2); border: 1px solid var(--border);
+  }
+  .contact-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--bg3); display: flex; align-items: center;
+    justify-content: center; font-size: 14px; flex-shrink: 0;
+  }
   .contact-name { font-weight: 600; font-size: 13px; }
   .contact-rel { font-size: 11px; color: var(--text2); }
+
+  /* Loading / empty states */
   .loading { text-align: center; padding: 24px; color: var(--text3); }
-  .spinner { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 8px; }
+  .spinner {
+    width: 20px; height: 20px; border: 2px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin 0.8s linear infinite; margin: 0 auto 8px;
+  }
   @keyframes spin { to { transform: rotate(360deg); } }
   .empty { text-align: center; padding: 16px; color: var(--text3); font-size: 12px; }
   .error-msg { color: var(--red); text-align: center; padding: 16px; font-size: 12px; }
-  .day-divider { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; padding: 4px 0; margin-top: 6px; }
+
+  /* Day divider for upcoming */
+  .day-divider {
+    font-size: 11px; font-weight: 600; color: var(--text3);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 4px 0; margin-top: 6px;
+  }
 </style>
 </head>
 <body>
-<div class="container" id="app"><div class="loading"><div class="spinner"></div>Connecting...</div></div>
+<div class="container" id="app">
+  <div class="loading"><div class="spinner"></div>Connecting...</div>
+</div>
+
 <script>
-let counter=0;const pendingCalls=new Map();let hostConnectorId=null;
-function unwrapResult(r){if(r?.content?.[0]?.type==="text"){try{r=JSON.parse(r.content[0].text)}catch{}}if(r?.content?.[0]?.type==="text"){try{r=JSON.parse(r.content[0].text)}catch{}}return r}
-function mcpCall(tool,args,cid){const rid="req_"+(++counter)+"_"+Date.now();return new Promise((res,rej)=>{const t=setTimeout(()=>rej(new Error("timeout")),15000);pendingCalls.set(rid,{resolve:r=>{clearTimeout(t);res(unwrapResult(r))},reject:e=>{clearTimeout(t);rej(e)}});window.parent.postMessage({source:"adas-plugin",message:{action:"mcp-call",payload:{requestId:rid,toolName:"cp.fe_api",args:{method:"mcpProxy",params:{connectorId:cid,tool,args}}}}},"*")})}
-window.addEventListener("message",ev=>{const d=ev.data||{};if(d.source!=="adas-host")return;const msg=d.message;if(msg?.type==="init"){hostConnectorId=msg.payload?.connectorId||"mobile-device-mcp";loadDashboard()}if(msg?.type==="mcp-result"){const{requestId,result,error}=msg.payload||{};const p=pendingCalls.get(requestId);if(p){pendingCalls.delete(requestId);if(error)p.reject(new Error(error));else p.resolve(result)}}});
-function esc(s){if(!s)return"";const d=document.createElement("div");d.textContent=String(s);return d.innerHTML}
-function formatTime(t){return t||""}
-function getRelEmoji(r){return{wife:"\u{1F49C}",husband:"\u{1F49C}",boss:"\u{1F4BC}",mother:"\u{1F49B}",father:"\u{1F49B}",son:"\u{1F466}",daughter:"\u{1F467}",friend:"\u{1F91D}",colleague:"\u{1F4BB}",dentist:"\u{1FA7A}"}[r]||"\u{1F464}"}
-function renderEvents(events,id){const el=document.getElementById(id);if(!events||!events.length){el.innerHTML='<div class="empty">No events</div>';return}el.innerHTML=events.map(e=>'<div class="event"><div class="event-time">'+formatTime(e.start)+'</div><div class="event-body"><div class="event-title">'+esc(e.title)+'</div>'+(e.location?'<div class="event-meta event-loc">\u{1F4CD} '+esc(e.location)+'</div>':'')+(e.attendees?.length?'<div class="event-meta">\u{1F465} '+e.attendees.map(esc).join(", ")+'</div>':'')+'</div></div>').join("")}
-function renderUpcoming(events,id){const el=document.getElementById(id);if(!events||!events.length){el.innerHTML='<div class="empty">No upcoming events</div>';return}const byDate={};for(const e of events){if(!byDate[e.date])byDate[e.date]=[];byDate[e.date].push(e)}let html="";for(const[date,evts]of Object.entries(byDate)){const d=new Date(date+"T12:00:00");html+='<div class="day-divider">'+d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})+'</div>';html+=evts.map(e=>'<div class="event"><div class="event-time">'+formatTime(e.start)+'</div><div class="event-body"><div class="event-title">'+esc(e.title)+'</div>'+(e.location?'<div class="event-meta event-loc">\u{1F4CD} '+esc(e.location)+'</div>':'')+'</div></div>').join("")}el.innerHTML=html}
-function renderMemories(mems,id){const el=document.getElementById(id);if(!mems||!mems.length){el.innerHTML='<div class="empty">No stored memories yet</div>';return}el.innerHTML=mems.map(m=>'<div class="memory"><div class="memory-top"><span class="memory-type type-'+((m.type||"fact").toLowerCase())+'">'+esc(m.type||"fact")+'</span></div><div class="memory-content">'+esc(m.content)+'</div>'+(m.tags?.length?'<div class="memory-tags">'+m.tags.map(t=>'<span class="memory-tag">'+esc(t)+'</span>').join("")+'</div>':'')+'</div>').join("")}
-function renderContacts(contacts,id){const el=document.getElementById(id);if(!contacts||!contacts.length){el.innerHTML='<div class="empty">No contacts</div>';return}el.innerHTML=contacts.map(c=>'<div class="contact"><div class="contact-avatar">'+getRelEmoji(c.relationship)+'</div><div><div class="contact-name">'+esc(c.name)+'</div><div class="contact-rel">'+esc(c.relationship)+(c.phone?" \u2022 "+esc(c.phone):"")+'</div></div></div>').join("")}
-async function loadDashboard(){const app=document.getElementById("app");app.innerHTML='<div class="section"><div class="section-header"><span class="section-icon">\u{1F4C5}</span><span class="section-title">Today</span><span class="section-badge" id="today-count">...</span></div><div id="today-events"><div class="loading"><div class="spinner"></div></div></div></div><div class="section"><div class="section-header"><span class="section-icon">\u{1F5D3}</span><span class="section-title">Upcoming</span></div><div id="upcoming-events"><div class="loading"><div class="spinner"></div></div></div></div><div class="section"><div class="section-header"><span class="section-icon">\u{1F9E0}</span><span class="section-title">Memories</span><span class="section-badge" id="mem-count">...</span></div><div id="memories"><div class="loading"><div class="spinner"></div></div></div></div><div class="section"><div class="section-header"><span class="section-icon">\u{1F4D2}</span><span class="section-title">Contacts</span></div><div id="contacts"><div class="loading"><div class="spinner"></div></div></div></div>';const cid=hostConnectorId||"mobile-device-mcp";const[t,u,m,c]=await Promise.allSettled([mcpCall("device.calendar.today",{},cid),mcpCall("device.calendar.upcoming",{days:7},cid),mcpCall("memory.list",{},"memory-mcp"),mcpCall("device.contacts.search",{query:""},cid)]);if(t.status==="fulfilled"&&t.value?.ok){const ev=t.value.events||[];document.getElementById("today-count").textContent=ev.length;renderEvents(ev,"today-events")}else document.getElementById("today-events").innerHTML='<div class="error-msg">Could not load events</div>';if(u.status==="fulfilled"&&u.value?.ok)renderUpcoming(u.value.events||[],"upcoming-events");else document.getElementById("upcoming-events").innerHTML='<div class="error-msg">Could not load upcoming</div>';if(m.status==="fulfilled"&&m.value?.ok){const ms=m.value.memories||[];document.getElementById("mem-count").textContent=ms.length;renderMemories(ms,"memories")}else document.getElementById("memories").innerHTML='<div class="empty">No memories available</div>';if(c.status==="fulfilled"&&c.value?.ok)renderContacts(c.value.contacts||[],"contacts");else document.getElementById("contacts").innerHTML='<div class="error-msg">Could not load contacts</div>'}
+// ── PostMessage MCP Bridge ──
+let counter = 0;
+const pendingCalls = new Map();
+let hostConnectorId = null;
+
+function unwrapResult(raw) {
+  if (raw?.content?.[0]?.type === "text") {
+    try { raw = JSON.parse(raw.content[0].text); } catch {}
+  }
+  if (raw?.content?.[0]?.type === "text") {
+    try { raw = JSON.parse(raw.content[0].text); } catch {}
+  }
+  return raw;
+}
+
+function mcpCall(tool, args, connectorId) {
+  const requestId = "req_" + (++counter) + "_" + Date.now();
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error("timeout")), 15000);
+    pendingCalls.set(requestId, {
+      resolve: (r) => { clearTimeout(timeout); resolve(unwrapResult(r)); },
+      reject:  (e) => { clearTimeout(timeout); reject(e); },
+    });
+    window.parent.postMessage({
+      source: "adas-plugin",
+      message: {
+        action: "mcp-call",
+        payload: {
+          requestId,
+          toolName: "cp.fe_api",
+          args: { method: "mcpProxy", params: { connectorId, tool, args } },
+        },
+      },
+    }, "*");
+  });
+}
+
+window.addEventListener("message", (ev) => {
+  const d = ev.data || {};
+  if (d.source !== "adas-host") return;
+  const msg = d.message;
+
+  if (msg?.type === "init") {
+    hostConnectorId = msg.payload?.connectorId || "mobile-device-mcp";
+    loadDashboard();
+  }
+
+  if (msg?.type === "mcp-result") {
+    const { requestId, result, error } = msg.payload || {};
+    const pending = pendingCalls.get(requestId);
+    if (pending) {
+      pendingCalls.delete(requestId);
+      if (error) pending.reject(new Error(error));
+      else pending.resolve(result);
+    }
+  }
+});
+
+// ── Rendering helpers ──
+function formatTime(t) { return t || ""; }
+
+function getRelEmoji(rel) {
+  const map = { wife: "\u{1F49C}", husband: "\u{1F49C}", boss: "\u{1F4BC}", mother: "\u{1F49B}", father: "\u{1F49B}",
+    son: "\u{1F466}", daughter: "\u{1F467}", friend: "\u{1F91D}", colleague: "\u{1F4BB}", dentist: "\u{1FA7A}" };
+  return map[rel] || "\u{1F464}";
+}
+
+function renderEvents(events, containerId) {
+  const el = document.getElementById(containerId);
+  if (!events || events.length === 0) {
+    el.innerHTML = '<div class="empty">No events</div>';
+    return;
+  }
+  el.innerHTML = events.map(e => `
+    <div class="event">
+      <div class="event-time">${formatTime(e.start)}</div>
+      <div class="event-body">
+        <div class="event-title">${esc(e.title)}</div>
+        ${e.location ? `<div class="event-meta event-loc">\u{1F4CD} ${esc(e.location)}</div>` : ""}
+        ${e.attendees?.length ? `<div class="event-meta">\u{1F465} ${e.attendees.map(esc).join(", ")}</div>` : ""}
+      </div>
+    </div>
+  `).join("");
+}
+
+function renderUpcoming(events, containerId) {
+  const el = document.getElementById(containerId);
+  if (!events || events.length === 0) {
+    el.innerHTML = '<div class="empty">No upcoming events</div>';
+    return;
+  }
+  // Group by date
+  const byDate = {};
+  for (const e of events) {
+    if (!byDate[e.date]) byDate[e.date] = [];
+    byDate[e.date].push(e);
+  }
+  let html = "";
+  for (const [date, evts] of Object.entries(byDate)) {
+    const d = new Date(date + "T12:00:00");
+    const label = d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+    html += `<div class="day-divider">${label}</div>`;
+    html += evts.map(e => `
+      <div class="event">
+        <div class="event-time">${formatTime(e.start)}</div>
+        <div class="event-body">
+          <div class="event-title">${esc(e.title)}</div>
+          ${e.location ? `<div class="event-meta event-loc">\u{1F4CD} ${esc(e.location)}</div>` : ""}
+        </div>
+      </div>
+    `).join("");
+  }
+  el.innerHTML = html;
+}
+
+function renderMemories(memories, containerId) {
+  const el = document.getElementById(containerId);
+  if (!memories || memories.length === 0) {
+    el.innerHTML = '<div class="empty">No stored memories yet</div>';
+    return;
+  }
+  el.innerHTML = memories.map(m => `
+    <div class="memory">
+      <div class="memory-top">
+        <span class="memory-type type-${(m.type || "fact").toLowerCase()}">${esc(m.type || "fact")}</span>
+      </div>
+      <div class="memory-content">${esc(m.content)}</div>
+      ${m.tags?.length ? `<div class="memory-tags">${m.tags.map(t => `<span class="memory-tag">${esc(t)}</span>`).join("")}</div>` : ""}
+    </div>
+  `).join("");
+}
+
+function renderContacts(contacts, containerId) {
+  const el = document.getElementById(containerId);
+  if (!contacts || contacts.length === 0) {
+    el.innerHTML = '<div class="empty">No contacts</div>';
+    return;
+  }
+  el.innerHTML = contacts.map(c => `
+    <div class="contact">
+      <div class="contact-avatar">${getRelEmoji(c.relationship)}</div>
+      <div>
+        <div class="contact-name">${esc(c.name)}</div>
+        <div class="contact-rel">${esc(c.relationship)}${c.phone ? " \u2022 " + esc(c.phone) : ""}</div>
+      </div>
+    </div>
+  `).join("");
+}
+
+function esc(s) {
+  if (!s) return "";
+  const d = document.createElement("div");
+  d.textContent = String(s);
+  return d.innerHTML;
+}
+
+// ── Load dashboard data ──
+async function loadDashboard() {
+  const app = document.getElementById("app");
+  app.innerHTML = `
+    <div class="section">
+      <div class="section-header">
+        <span class="section-icon">\u{1F4C5}</span>
+        <span class="section-title">Today</span>
+        <span class="section-badge" id="today-count">...</span>
+      </div>
+      <div id="today-events"><div class="loading"><div class="spinner"></div></div></div>
+    </div>
+    <div class="section">
+      <div class="section-header">
+        <span class="section-icon">\u{1F5D3}</span>
+        <span class="section-title">Upcoming</span>
+      </div>
+      <div id="upcoming-events"><div class="loading"><div class="spinner"></div></div></div>
+    </div>
+    <div class="section">
+      <div class="section-header">
+        <span class="section-icon">\u{1F9E0}</span>
+        <span class="section-title">Memories</span>
+        <span class="section-badge" id="mem-count">...</span>
+      </div>
+      <div id="memories"><div class="loading"><div class="spinner"></div></div></div>
+    </div>
+    <div class="section">
+      <div class="section-header">
+        <span class="section-icon">\u{1F4D2}</span>
+        <span class="section-title">Contacts</span>
+      </div>
+      <div id="contacts"><div class="loading"><div class="spinner"></div></div></div>
+    </div>
+  `;
+
+  // Fetch all data in parallel
+  const cid = hostConnectorId || "mobile-device-mcp";
+  const [todayRes, upcomingRes, memRes, contactsRes] = await Promise.allSettled([
+    mcpCall("device.calendar.today", {}, cid),
+    mcpCall("device.calendar.upcoming", { days: 7 }, cid),
+    mcpCall("memory.list", {}, "memory-mcp"),
+    mcpCall("device.contacts.search", { query: "" }, cid),
+  ]);
+
+  // Today
+  if (todayRes.status === "fulfilled" && todayRes.value?.ok) {
+    const events = todayRes.value.events || [];
+    document.getElementById("today-count").textContent = events.length;
+    renderEvents(events, "today-events");
+  } else {
+    document.getElementById("today-events").innerHTML = '<div class="error-msg">Could not load today\'s events</div>';
+  }
+
+  // Upcoming
+  if (upcomingRes.status === "fulfilled" && upcomingRes.value?.ok) {
+    renderUpcoming(upcomingRes.value.events || [], "upcoming-events");
+  } else {
+    document.getElementById("upcoming-events").innerHTML = '<div class="error-msg">Could not load upcoming events</div>';
+  }
+
+  // Memories
+  if (memRes.status === "fulfilled" && memRes.value?.ok) {
+    const mems = memRes.value.memories || [];
+    document.getElementById("mem-count").textContent = mems.length;
+    renderMemories(mems, "memories");
+  } else {
+    document.getElementById("memories").innerHTML = '<div class="empty">No memories available</div>';
+  }
+
+  // Contacts
+  if (contactsRes.status === "fulfilled" && contactsRes.value?.ok) {
+    renderContacts(contactsRes.value.contacts || [], "contacts");
+  } else {
+    document.getElementById("contacts").innerHTML = '<div class="error-msg">Could not load contacts</div>';
+  }
+}
 </script>
 </body>
 </html>

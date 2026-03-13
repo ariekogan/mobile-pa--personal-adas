@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memories</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0e14;
+      color: #e8ecf1;
+      padding: 16px;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .header h1 { font-size: 18px; font-weight: 600; }
+    .live-badge {
+      display: none;
+      font-size: 10px;
+      color: #22c55e;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+    .total-count {
+      font-size: 13px;
+      color: #8b95a5;
+    }
+
+    /* Filter Tabs */
+    .filters {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      padding: 5px 12px;
+      border-radius: 16px;
+      border: 1px solid #1e2a3a;
+      background: transparent;
+      color: #8b95a5;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .filter-btn:hover { border-color: #2563eb; color: #e8ecf1; }
+    .filter-btn.active { background: #2563eb; border-color: #2563eb; color: white; }
+    .filter-count {
+      font-size: 10px;
+      opacity: 0.7;
+      margin-left: 3px;
+    }
+
+    /* Search */
+    .search-bar {
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid #1e2a3a;
+      background: #111820;
+      color: #e8ecf1;
+      font-size: 13px;
+      margin-bottom: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-bar:focus { border-color: #2563eb; }
+    .search-bar::placeholder { color: #4a5568; }
+
+    /* Memory Card */
+    .memory-card {
+      background: #111820;
+      border: 1px solid #1e2a3a;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 10px;
+      transition: border-color 0.2s;
+    }
+    .memory-card:hover { border-color: #2563eb; }
+
+    .memory-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .memory-content {
+      font-size: 13px;
+      line-height: 1.5;
+      flex: 1;
+      word-break: break-word;
+    }
+    .memory-type {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+    .type-preference { background: #1a1f2e; color: #818cf8; }
+    .type-fact { background: #1a2e1f; color: #4ade80; }
+    .type-instruction { background: #2e2a1a; color: #fbbf24; }
+    .type-pattern { background: #2e1a2a; color: #f472b6; }
+    .type-rule { background: #1a2e2e; color: #22d3ee; }
+    .type-user_model { background: #2e1a1a; color: #fb923c; }
+
+    .memory-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+      align-items: center;
+    }
+    .tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: #1a2332;
+      color: #6b7a8d;
+    }
+    .memory-date {
+      font-size: 11px;
+      color: #4a5568;
+      margin-left: auto;
+    }
+    .memory-context {
+      font-size: 12px;
+      color: #6b7a8d;
+      margin-top: 6px;
+      font-style: italic;
+    }
+
+    /* Empty State */
+    .empty {
+      text-align: center;
+      padding: 48px 16px;
+      color: #6b7a8d;
+    }
+    .empty h2 { font-size: 16px; margin-bottom: 8px; color: #8b95a5; }
+    .empty p { font-size: 13px; line-height: 1.5; }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 14px;
+      padding-bottom: 20px;
+    }
+    .page-btn {
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: 1px solid #1e2a3a;
+      background: transparent;
+      color: #8b95a5;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .page-btn:hover { border-color: #2563eb; color: #e8ecf1; }
+    .page-btn:disabled { opacity: 0.3; cursor: default; }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script>
+    // ── 1. RENDER IMMEDIATELY — mobile-compatible ──
+    let memories = [];
+    let totalCount = 0;
+    let typeCounts = {};
+    let activeFilter = null; // null = all
+    let searchQuery = "";
+    let isLive = false;
+    let offset = 0;
+    const PAGE_SIZE = 20;
+
+    const TYPE_LABELS = {
+      preference: "Preference",
+      fact: "Fact",
+      instruction: "Instruction",
+      pattern: "Pattern",
+      rule: "Rule",
+      user_model: "User Model"
+    };
+
+    render();
+
+    // ── 2. POSTMESSAGE BRIDGE ──
+    let counter = 0;
+    const pendingCalls = new Map();
+    let hostConnectorId = "memory-mcp";
+
+    function unwrapResult(raw) {
+      if (raw?.content?.[0]?.type === "text") {
+        try { raw = JSON.parse(raw.content[0].text); } catch {}
+      }
+      if (raw?.content?.[0]?.type === "text") {
+        try { raw = JSON.parse(raw.content[0].text); } catch {}
+      }
+      return raw;
+    }
+
+    function mcpCall(tool, args) {
+      const requestId = "req_" + (++counter) + "_" + Date.now();
+      return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error("timeout")), 15000);
+        pendingCalls.set(requestId, {
+          resolve: (r) => { clearTimeout(timeout); resolve(unwrapResult(r)); },
+          reject:  (e) => { clearTimeout(timeout); reject(e); },
+        });
+        window.parent.postMessage({
+          source: "adas-plugin",
+          message: {
+            action: "mcp-call",
+            payload: {
+              requestId,
+              toolName: "cp.fe_api",
+              args: { method: "mcpProxy", params: { connectorId: hostConnectorId, tool, args } },
+            },
+          },
+        }, "*");
+      });
+    }
+
+    window.addEventListener("message", (ev) => {
+      const d = ev.data || {};
+      if (d.source !== "adas-host") return;
+      const msg = d.message;
+      if (msg?.type === "init") {
+        hostConnectorId = msg.payload?.connectorId || "memory-mcp";
+        tryLiveData();
+      }
+      if (msg?.type === "mcp-result") {
+        const { requestId, result, error } = msg.payload || {};
+        const pending = pendingCalls.get(requestId);
+        if (pending) {
+          pendingCalls.delete(requestId);
+          if (error) pending.reject(new Error(error));
+          else pending.resolve(result);
+        }
+      }
+    });
+
+    // ── 3. SILENTLY try live data ──
+    async function tryLiveData() {
+      try {
+        const args = { limit: PAGE_SIZE, offset };
+        if (activeFilter) args.type = activeFilter;
+
+        const result = await mcpCall("memory.list", args);
+        memories = result?.memories || [];
+        totalCount = result?.total || 0;
+
+        // Get counts per type (only on first load or filter change)
+        if (Object.keys(typeCounts).length === 0) {
+          const types = ["preference", "fact", "instruction", "pattern", "rule", "user_model"];
+          const countPromises = types.map(t =>
+            mcpCall("memory.list", { type: t, limit: 1 }).then(r => [t, r?.total || 0]).catch(() => [t, 0])
+          );
+          const counts = await Promise.all(countPromises);
+          typeCounts = Object.fromEntries(counts);
+        }
+
+        isLive = true;
+        render();
+      } catch {
+        // Silent failure on mobile
+      }
+    }
+
+    async function loadWithFilter(type) {
+      activeFilter = type;
+      offset = 0;
+      if (isLive) {
+        try {
+          const args = { limit: PAGE_SIZE, offset: 0 };
+          if (type) args.type = type;
+          const result = await mcpCall("memory.list", args);
+          memories = result?.memories || [];
+          totalCount = result?.total || 0;
+          render();
+        } catch {}
+      }
+    }
+
+    async function searchMemories() {
+      if (!isLive || !searchQuery.trim()) {
+        if (!searchQuery.trim()) { loadWithFilter(activeFilter); }
+        return;
+      }
+      try {
+        const args = { query: searchQuery.trim(), limit: PAGE_SIZE };
+        if (activeFilter) args.type = activeFilter;
+        const result = await mcpCall("memory.recall", args);
+        memories = result?.memories || [];
+        totalCount = memories.length;
+        offset = 0;
+        render();
+      } catch {}
+    }
+
+    async function loadPage(newOffset) {
+      offset = newOffset;
+      if (isLive) await tryLiveData();
+    }
+
+    setTimeout(() => { if (!isLive) tryLiveData(); }, 2000);
+
+    let searchTimer = null;
+    function onSearchInput(val) {
+      searchQuery = val;
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(searchMemories, 400);
+    }
+
+    // ── Render ──
+    function render() {
+      const app = document.getElementById("app");
+      const allCount = Object.values(typeCounts).reduce((a, b) => a + b, 0);
+
+      let filtersHtml = "";
+      if (isLive) {
+        const types = [
+          { key: null, label: "All", count: allCount },
+          { key: "preference", label: "Preferences", count: typeCounts.preference || 0 },
+          { key: "fact", label: "Facts", count: typeCounts.fact || 0 },
+          { key: "instruction", label: "Instructions", count: typeCounts.instruction || 0 },
+          { key: "pattern", label: "Patterns", count: typeCounts.pattern || 0 },
+          { key: "rule", label: "Rules", count: typeCounts.rule || 0 },
+          { key: "user_model", label: "User Model", count: typeCounts.user_model || 0 },
+        ].filter(t => t.key === null || t.count > 0);
+
+        filtersHtml = `
+          <div class="filters">
+            ${types.map(t => `
+              <button class="filter-btn ${activeFilter === t.key ? 'active' : ''}"
+                      onclick="loadWithFilter(${t.key ? "'" + t.key + "'" : 'null'})">
+                ${t.label}<span class="filter-count">${t.count}</span>
+              </button>
+            `).join('')}
+          </div>
+          <input class="search-bar" type="text" placeholder="Search memories..."
+                 value="${escAttr(searchQuery)}" oninput="onSearchInput(this.value)">
+        `;
+      }
+
+      if (memories.length === 0 && !isLive) {
+        app.innerHTML = `
+          <div class="header">
+            <h1>Memories</h1>
+          </div>
+          <div class="empty">
+            <h2>Your memory store</h2>
+            <p>Preferences, facts, instructions, and patterns<br>
+            that your assistant remembers about you.</p>
+          </div>
+        `;
+        return;
+      }
+
+      if (memories.length === 0 && isLive) {
+        app.innerHTML = `
+          <div class="header">
+            <h1>Memories <span class="live-badge" style="display:inline">● LIVE</span></h1>
+            <span class="total-count">${allCount} total</span>
+          </div>
+          ${filtersHtml}
+          <div class="empty">
+            <h2>${activeFilter ? 'No ' + (TYPE_LABELS[activeFilter] || activeFilter) + ' memories' : 'No memories yet'}</h2>
+            <p>${activeFilter ? 'Try a different filter or teach your assistant something.' : 'Tell your assistant to remember things like:<br>"Remember I prefer window seats"<br>"My wife\'s name is Sarah"'}</p>
+          </div>
+        `;
+        return;
+      }
+
+      const cards = memories.map(m => {
+        const typeClass = "type-" + (m.type || "fact");
+        const typeLabel = TYPE_LABELS[m.type] || m.type || "Unknown";
+        const tags = Array.isArray(m.tags) ? m.tags : (m.tags ? String(m.tags).split(",") : []);
+        const date = m.created_at ? formatDate(m.created_at) : "";
+        const content = truncate(m.content || "", 200);
+
+        return `
+          <div class="memory-card">
+            <div class="memory-top">
+              <div class="memory-content">${escHtml(content)}</div>
+              <span class="memory-type ${typeClass}">${typeLabel}</span>
+            </div>
+            ${m.context ? `<div class="memory-context">${escHtml(truncate(m.context, 120))}</div>` : ''}
+            <div class="memory-meta">
+              ${tags.filter(t => t.trim()).slice(0, 6).map(t => `<span class="tag">${escHtml(t.trim())}</span>`).join('')}
+              ${date ? `<span class="memory-date">${date}</span>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      const hasMore = totalCount > offset + PAGE_SIZE;
+      const hasPrev = offset > 0;
+      const paginationHtml = (hasMore || hasPrev) ? `
+        <div class="pagination">
+          <button class="page-btn" onclick="loadPage(${offset - PAGE_SIZE})" ${hasPrev ? '' : 'disabled'}>← Prev</button>
+          <button class="page-btn" onclick="loadPage(${offset + PAGE_SIZE})" ${hasMore ? '' : 'disabled'}>Next →</button>
+        </div>
+      ` : '';
+
+      app.innerHTML = `
+        <div class="header">
+          <h1>Memories <span class="live-badge" style="display:inline">● LIVE</span></h1>
+          <span class="total-count">${totalCount} ${activeFilter ? TYPE_LABELS[activeFilter] || activeFilter : 'total'}</span>
+        </div>
+        ${filtersHtml}
+        ${cards}
+        ${paginationHtml}
+      `;
+    }
+
+    function formatDate(d) {
+      try {
+        const date = new Date(d.replace(' ', 'T'));
+        const now = new Date();
+        const diff = now - date;
+        if (diff < 86400000) return "Today";
+        if (diff < 172800000) return "Yesterday";
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      } catch { return ""; }
+    }
+
+    function truncate(s, max) {
+      return s.length > max ? s.substring(0, max) + "…" : s;
+    }
+
+    function escHtml(s) {
+      const d = document.createElement('div');
+      d.textContent = s || '';
+      return d.innerHTML;
+    }
+
+    function escAttr(s) {
+      return (s || '').replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>

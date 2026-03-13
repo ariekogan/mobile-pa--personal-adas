@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teach Panel</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0e14;
+      color: #e8ecf1;
+      padding: 16px;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .header h1 { font-size: 18px; font-weight: 600; }
+    .stats {
+      display: flex;
+      gap: 12px;
+      font-size: 13px;
+      color: #8b95a5;
+    }
+    .stats .active { color: #22c55e; }
+    .stats .inactive { color: #f59e0b; }
+    .live-badge {
+      display: none;
+      font-size: 10px;
+      color: #22c55e;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    /* Rule Card */
+    .rule-card {
+      background: #111820;
+      border: 1px solid #1e2a3a;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 10px;
+      transition: border-color 0.2s;
+    }
+    .rule-card:hover { border-color: #2563eb; }
+    .rule-card.disabled { opacity: 0.5; }
+
+    .rule-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    .rule-description {
+      font-size: 14px;
+      font-weight: 500;
+      flex: 1;
+      margin-right: 12px;
+    }
+    .rule-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    /* Toggle Switch */
+    .toggle {
+      position: relative;
+      width: 36px;
+      height: 20px;
+      cursor: pointer;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle .slider {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #374151;
+      border-radius: 10px;
+      transition: 0.3s;
+    }
+    .toggle .slider::before {
+      content: "";
+      position: absolute;
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.3s;
+    }
+    .toggle input:checked + .slider { background: #22c55e; }
+    .toggle input:checked + .slider::before { transform: translateX(16px); }
+
+    /* Delete Button */
+    .btn-delete {
+      background: none;
+      border: 1px solid #374151;
+      color: #8b95a5;
+      width: 28px;
+      height: 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .btn-delete:hover { border-color: #ef4444; color: #ef4444; }
+
+    /* Rule Meta */
+    .rule-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: #1a2332;
+      color: #6b7a8d;
+    }
+    .tag.trigger-type { background: #1a1f2e; color: #818cf8; }
+    .tag.action-type { background: #1a2e1f; color: #4ade80; }
+    .tag.source { background: #2e2a1a; color: #fbbf24; }
+
+    /* Empty State */
+    .empty {
+      text-align: center;
+      padding: 48px 16px;
+      color: #6b7a8d;
+    }
+    .empty h2 { font-size: 16px; margin-bottom: 8px; color: #8b95a5; }
+    .empty p { font-size: 13px; line-height: 1.5; }
+
+    /* Confirm Dialog */
+    .confirm-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .confirm-box {
+      background: #111820;
+      border: 1px solid #1e2a3a;
+      border-radius: 12px;
+      padding: 20px;
+      max-width: 320px;
+      text-align: center;
+    }
+    .confirm-box p { margin-bottom: 16px; font-size: 14px; }
+    .confirm-btns { display: flex; gap: 8px; justify-content: center; }
+    .confirm-btns button {
+      padding: 8px 20px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .btn-cancel { background: #1e2a3a; color: #e8ecf1; }
+    .btn-confirm-delete { background: #ef4444; color: white; }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script>
+    // ── 1. RENDER IMMEDIATELY with default empty state — works on mobile ──
+    let rules = [];
+    let counts = { total: 0, active: 0, inactive: 0 };
+    let isLive = false;
+    let pendingDeleteId = null;
+
+    // Render default state IMMEDIATELY — no MCP calls needed
+    render();
+
+    // ── 2. POSTMESSAGE BRIDGE — only works on web, silently fails on mobile ──
+    let counter = 0;
+    const pendingCalls = new Map();
+    let hostConnectorId = "memory-mcp";
+
+    function unwrapResult(raw) {
+      if (raw?.content?.[0]?.type === "text") {
+        try { raw = JSON.parse(raw.content[0].text); } catch {}
+      }
+      if (raw?.content?.[0]?.type === "text") {
+        try { raw = JSON.parse(raw.content[0].text); } catch {}
+      }
+      return raw;
+    }
+
+    function mcpCall(tool, args) {
+      const requestId = "req_" + (++counter) + "_" + Date.now();
+      return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error("timeout")), 15000);
+        pendingCalls.set(requestId, {
+          resolve: (r) => { clearTimeout(timeout); resolve(unwrapResult(r)); },
+          reject:  (e) => { clearTimeout(timeout); reject(e); },
+        });
+        window.parent.postMessage({
+          source: "adas-plugin",
+          message: {
+            action: "mcp-call",
+            payload: {
+              requestId,
+              toolName: "cp.fe_api",
+              args: { method: "mcpProxy", params: { connectorId: hostConnectorId, tool, args } },
+            },
+          },
+        }, "*");
+      });
+    }
+
+    window.addEventListener("message", (ev) => {
+      const d = ev.data || {};
+      if (d.source !== "adas-host") return;
+      const msg = d.message;
+
+      if (msg?.type === "init") {
+        hostConnectorId = msg.payload?.connectorId || "memory-mcp";
+        tryLiveData();
+      }
+
+      if (msg?.type === "mcp-result") {
+        const { requestId, result, error } = msg.payload || {};
+        const pending = pendingCalls.get(requestId);
+        if (pending) {
+          pendingCalls.delete(requestId);
+          if (error) pending.reject(new Error(error));
+          else pending.resolve(result);
+        }
+      }
+    });
+
+    // ── 3. SILENTLY try live data — upgrade UI if successful, ignore if not ──
+    async function tryLiveData() {
+      try {
+        const [listResult, countResult] = await Promise.all([
+          mcpCall("memory.list", { type: "rule", limit: 100 }),
+          mcpCall("memory.rules.count", {}),
+        ]);
+
+        counts = countResult || { total: 0, active: 0, inactive: 0 };
+
+        rules = (listResult?.memories || []).map(m => {
+          let parsed = {};
+          try { parsed = JSON.parse(m.content); } catch {}
+          return {
+            id: m.id,
+            description: parsed.description || parsed.name || m.context || m.content,
+            trigger: parsed.trigger || "—",
+            trigger_type: parsed.trigger_type || (parsed.trigger?.event ? parsed.trigger.event : "unknown"),
+            action: parsed.action || parsed.actions?.[0]?.action || "—",
+            action_type: parsed.action_type || (parsed.actions ? "multi-action" : "unknown"),
+            confidence: parsed.confidence || 0,
+            active: (parsed.active !== false && parsed.status !== "inactive"),
+            created_from: parsed.created_from || parsed.audit?.created_from || "instruction",
+            tags: Array.isArray(m.tags) ? m.tags : (m.tags ? String(m.tags).split(",") : []),
+            raw: m,
+            parsed,
+          };
+        });
+
+        isLive = true;
+        render();
+      } catch {
+        // Silent failure — mobile hits this, web won't. Both are fine.
+        // Default empty state already rendered.
+      }
+    }
+
+    // Auto-try if no init message within 2s (standalone or slow host)
+    setTimeout(() => { if (!isLive) tryLiveData(); }, 2000);
+
+    // ── Toggle Rule ──
+    async function toggleRule(id) {
+      const rule = rules.find(r => r.id === id);
+      if (!rule) return;
+      try {
+        const updated = { ...rule.parsed, active: !rule.active };
+        await mcpCall("memory.update", { id, content: JSON.stringify(updated) });
+        await tryLiveData();
+      } catch {
+        // Silent failure on mobile
+      }
+    }
+
+    // ── Delete Rule ──
+    function confirmDelete(id) {
+      pendingDeleteId = id;
+      render();
+    }
+
+    function cancelDelete() {
+      pendingDeleteId = null;
+      render();
+    }
+
+    async function doDelete() {
+      if (!pendingDeleteId) return;
+      try {
+        await mcpCall("memory.delete", { id: pendingDeleteId });
+        pendingDeleteId = null;
+        await tryLiveData();
+      } catch {
+        pendingDeleteId = null;
+        render();
+      }
+    }
+
+    // ── Render ──
+    function render() {
+      const app = document.getElementById("app");
+
+      if (rules.length === 0) {
+        app.innerHTML = `
+          <div class="header">
+            <h1>Taught Rules${isLive ? '<span class="live-badge" style="display:inline">● LIVE</span>' : ''}</h1>
+          </div>
+          <div class="empty">
+            <h2>No rules yet</h2>
+            <p>Teach your assistant by saying things like:<br>
+            "When my boss calls during a meeting, always ring through"<br>
+            "Never schedule meetings before 10am"</p>
+          </div>
+        `;
+        return;
+      }
+
+      const ruleCards = rules.map(r => `
+        <div class="rule-card ${r.active ? '' : 'disabled'}" data-id="${r.id}">
+          <div class="rule-top">
+            <div class="rule-description">${escHtml(r.description)}</div>
+            <div class="rule-actions">
+              <label class="toggle">
+                <input type="checkbox" ${r.active ? 'checked' : ''} onchange="toggleRule(${r.id})">
+                <span class="slider"></span>
+              </label>
+              <button class="btn-delete" onclick="confirmDelete(${r.id})" title="Delete rule">✕</button>
+            </div>
+          </div>
+          <div class="rule-meta">
+            <span class="tag trigger-type">${escHtml(r.trigger_type)}</span>
+            <span class="tag action-type">${escHtml(r.action_type)}</span>
+            <span class="tag source">${escHtml(r.created_from)}</span>
+            ${r.tags.filter(t => t.trim()).map(t => `<span class="tag">${escHtml(t.trim())}</span>`).join('')}
+          </div>
+        </div>
+      `).join('');
+
+      let html = `
+        <div class="header">
+          <h1>Taught Rules${isLive ? '<span class="live-badge" style="display:inline">● LIVE</span>' : ''}</h1>
+          <div class="stats">
+            <span class="active">${counts.active || 0} active</span>
+            <span class="inactive">${counts.inactive || 0} inactive</span>
+          </div>
+        </div>
+        ${ruleCards}
+      `;
+
+      if (pendingDeleteId !== null) {
+        const rule = rules.find(r => r.id === pendingDeleteId);
+        html += `
+          <div class="confirm-overlay" onclick="cancelDelete()">
+            <div class="confirm-box" onclick="event.stopPropagation()">
+              <p>Delete this rule?<br><strong>${escHtml(rule?.description || 'Unknown')}</strong></p>
+              <div class="confirm-btns">
+                <button class="btn-cancel" onclick="cancelDelete()">Cancel</button>
+                <button class="btn-confirm-delete" onclick="doDelete()">Delete</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      app.innerHTML = html;
+    }
+
+    function escHtml(s) {
+      const d = document.createElement('div');
+      d.textContent = s || '';
+      return d.innerHTML;
+    }
+  </script>
+</body>
+</html>

@@ -204,8 +204,7 @@
       {
         "id": "mobile-device-mcp",
         "required": true,
-        "ui_capable": true,
-        "description": "Platform device data connector — calendar, contacts, location, messaging, weather, commute, notifications, DND, battery, connectivity, integration registry, schedule UI. Reads real device data from cloud relay (pushed by ateam-mobile's device-bridge).",
+        "description": "Platform device data connector — calendar, contacts, location, messaging, weather, commute, notifications, DND, battery, connectivity, integration registry. Reads real device data from cloud relay (pushed by ateam-mobile's device-bridge).",
         "used_by": [
           "pa-orchestrator",
           "life-manager",
@@ -219,8 +218,7 @@
       {
         "id": "memory-mcp",
         "required": true,
-        "ui_capable": true,
-        "description": "Dual-store + rule engine — long-term memory (preferences, facts, rules) + ephemeral context (situations, plans) + rule matching + teach panel UI",
+        "description": "Dual-store + rule engine — long-term memory (preferences, facts, rules) + ephemeral context (situations, plans) + rule matching",
         "used_by": [
           "pa-orchestrator",
           "life-manager",
@@ -256,7 +254,7 @@
       {
         "id": "personal-assistant-ui-mcp",
         "ui_capable": true,
-        "description": "Solution-owned UI connector — serves PA dashboard and schedule panel as dynamically loaded plugins",
+        "description": "Solution UI connector — serves all PA UI plugins (schedule, dashboard, memories, teach panel)",
         "used_by": [
           "pa-orchestrator",
           "life-manager",
@@ -7783,7 +7781,6 @@
       "id": "mobile-device-mcp",
       "name": "Device MCP",
       "transport": "stdio",
-      "ui_capable": true,
       "command": "node",
       "args": [
         "/mcp-store/mobile-pa/mobile-device-mcp/server.js"
@@ -7793,12 +7790,21 @@
       "id": "memory-mcp",
       "name": "Memory MCP",
       "transport": "stdio",
-      "ui_capable": true,
       "command": "node",
       "args": [
         "/mcp-store/mobile-pa/memory-mcp/server.js"
       ]
+    },
+    {
+      "id": "personal-assistant-ui-mcp",
+      "name": "PA UI",
+      "transport": "stdio",
+      "ui_capable": true,
+      "command": "node",
+      "args": [
+        "/mcp-store/mobile-pa/personal-assistant-ui-mcp/server.js"
+      ]
     }
   ],
-  "timestamp": "2026-03-13T13:26:20.100Z"
+  "timestamp": "2026-03-13T21:46:45.076Z"
 }

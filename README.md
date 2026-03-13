@@ -19,6 +19,7 @@ Situation-aware personal assistant with proactive intelligence. Memory-first orc
 
 - **Device MCP** (stdio)
 - **Memory MCP** (stdio)
+- **PA UI** (stdio)
 
 ## Repo Structure
 

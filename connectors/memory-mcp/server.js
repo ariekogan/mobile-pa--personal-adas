@@ -655,57 +655,9 @@ server.tool(
   }
 );
 
-// ─── UI Plugin Tools ───
-
-const PLUGINS = [
-  {
-    id: "teach-panel",
-    name: "Teach Panel",
-    version: "1.0.0",
-    description: "View and manage taught automation rules — enable, disable, delete",
-  },
-  {
-    id: "memories-panel",
-    name: "Memories",
-    version: "1.0.0",
-    description: "Browse all stored memories — preferences, facts, instructions, patterns",
-  },
-];
-
-server.tool(
-  "ui.listPlugins",
-  "List available UI plugins served by this connector.",
-  {},
-  async () => ({
-    content: [{ type: "text", text: JSON.stringify({ plugins: PLUGINS }) }],
-  })
-);
-
-server.tool(
-  "ui.getPlugin",
-  "Get the manifest for a specific UI plugin by ID.",
-  { id: z.string().describe("Plugin ID") },
-  async ({ id }) => {
-    const plugin = PLUGINS.find(p => p.id === id);
-    if (!plugin) {
-      return { content: [{ type: "text", text: JSON.stringify({ error: "Plugin not found" }) }] };
-    }
-    return {
-      content: [{
-        type: "text",
-        text: JSON.stringify({
-          ...plugin,
-          render: { mode: "iframe", iframeUrl: `/ui/${plugin.id}/${plugin.version}/index.html` },
-          channels: ["command"],
-          capabilities: { commands: [] },
-        }),
-      }],
-    };
-  }
-);
 
 // ─── Start ───
 
 const transport = new StdioServerTransport();
 await server.connect(transport);
-console.error("[memory-mcp] v3.2.0 — Dual-store + rule engine + UI plugins (teach-panel, memories) — SQLite at", DB_PATH);
+console.error("[memory-mcp] v3.3.0 — Dual-store + rule engine — SQLite at", DB_PATH);
