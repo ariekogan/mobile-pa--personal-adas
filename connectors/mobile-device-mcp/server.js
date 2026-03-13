@@ -863,6 +863,12 @@ const DEVICE_PLUGINS = [
     version: "1.0.0",
     description: "Today's calendar, upcoming events, and weather at a glance",
   },
+  {
+    id: "pa-dashboard",
+    name: "Personal Assistant",
+    version: "1.0.0",
+    description: "At-a-glance dashboard — calendar, memories, contacts, and weather",
+  },
 ];
 
 server.tool(
@@ -891,6 +897,8 @@ server.tool(
           render: { mode: "iframe", iframeUrl: `/ui/${plugin.id}/${plugin.version}/index.html` },
           channels: ["command"],
           capabilities: { commands: [] },
+          // EXPLICIT FOLDER NAME: Tells Core exactly where assets live in mcp-store
+          _connectorId: "device-mock-mcp",
         }),
       }],
     };

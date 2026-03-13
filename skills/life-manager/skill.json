@@ -25,11 +25,11 @@
       "id": "tool-cal-today",
       "id_status": "permanent",
       "name": "device.calendar.today",
-      "description": "Get all calendar events for today.",
+      "description": "Get all calendar events for today. Returns titles, times, locations, attendees, and notes.",
       "inputs": [],
       "output": {
         "type": "object",
-        "description": "Today's events"
+        "description": "Today's events with times, locations, attendees"
       },
       "source": {
         "type": "mcp_bridge",
@@ -62,7 +62,7 @@
       "id": "tool-cal-upcoming",
       "id_status": "permanent",
       "name": "device.calendar.upcoming",
-      "description": "Get upcoming calendar events for the next N days.",
+      "description": "Get upcoming calendar events for the next N days (tomorrow and beyond).",
       "inputs": [
         {
           "name": "days",
@@ -73,7 +73,7 @@
       ],
       "output": {
         "type": "object",
-        "description": "Upcoming events"
+        "description": "Upcoming events across multiple days"
       },
       "source": {
         "type": "mcp_bridge",
@@ -185,7 +185,7 @@
       "id": "tool-contacts-search",
       "id_status": "permanent",
       "name": "device.contacts.search",
-      "description": "Search contacts.",
+      "description": "Search contacts by name, relationship, or keyword.",
       "inputs": [
         {
           "name": "query",
@@ -236,7 +236,7 @@
       "id": "tool-contacts-get",
       "id_status": "permanent",
       "name": "device.contacts.get",
-      "description": "Get full contact details.",
+      "description": "Get full contact details by name or ID.",
       "inputs": [
         {
           "name": "contact_id",
@@ -282,11 +282,11 @@
       "id": "tool-location",
       "id_status": "permanent",
       "name": "device.location.current",
-      "description": "Get user's current location.",
+      "description": "Get user's current location based on time of day.",
       "inputs": [],
       "output": {
         "type": "object",
-        "description": "Current location"
+        "description": "Current location with place name and address"
       },
       "source": {
         "type": "mcp_bridge",
@@ -319,7 +319,7 @@
       "id": "tool-msg-send",
       "id_status": "permanent",
       "name": "device.message.send",
-      "description": "Send SMS/message to a contact. Always confirm first.",
+      "description": "Send SMS/message to a contact. Always confirm with user before sending.",
       "inputs": [
         {
           "name": "contact_name",
@@ -372,7 +372,7 @@
       "id": "tool-weather-current",
       "id_status": "permanent",
       "name": "device.weather.current",
-      "description": "Get current weather.",
+      "description": "Get current weather conditions — temperature, conditions, humidity, wind.",
       "inputs": [],
       "output": {
         "type": "object",
@@ -409,7 +409,7 @@
       "id": "tool-weather-forecast",
       "id_status": "permanent",
       "name": "device.weather.forecast",
-      "description": "Get weather forecast.",
+      "description": "Get weather forecast for the next N days.",
       "inputs": [
         {
           "name": "days",
@@ -453,7 +453,7 @@
       "id": "tool-commute",
       "id_status": "permanent",
       "name": "device.commute.estimate",
-      "description": "Estimate travel time.",
+      "description": "Estimate travel time between two locations.",
       "inputs": [
         {
           "name": "from",
@@ -471,7 +471,7 @@
           "name": "mode",
           "type": "string",
           "required": false,
-          "description": "Travel mode"
+          "description": "Travel mode: driving, transit, walking"
         }
       ],
       "output": {
@@ -512,7 +512,7 @@
       "id": "tool-mem-recall",
       "id_status": "permanent",
       "name": "memory.recall",
-      "description": "Check user preferences before scheduling.",
+      "description": "Check user preferences before scheduling or taking actions. Search stored memories for rules, likes, and instructions.",
       "inputs": [
         {
           "name": "query",
@@ -524,13 +524,13 @@
           "name": "type",
           "type": "string",
           "required": false,
-          "description": "Filter by type"
+          "description": "Filter by type: preference, fact, instruction, pattern"
         },
         {
           "name": "limit",
           "type": "number",
           "required": false,
-          "description": "Max results"
+          "description": "Max results (default 10)"
         }
       ],
       "output": {
@@ -555,8 +555,13 @@
               "query": "search term"
             },
             "output": {
-              "success": true,
-              "data": {}
+              "results": [
+                {
+                  "id": 1,
+                  "name": "Example item"
+                }
+              ],
+              "total_count": 1
             },
             "description": "Auto-generated example for memory.recall"
           }
@@ -571,23 +576,23 @@
     "supported": [
       {
         "id": "today_calendar",
-        "description": "Get all calendar events for today.",
+        "description": "Get all calendar events for today. Returns titles, times, locations, attendees, and notes.",
         "examples": [
-          "Get all calendar events for today.",
-          "I need to get all calendar events for today.",
-          "Can you get all calendar events for today.?",
-          "Please get all calendar events for today."
+          "Get all calendar events for today. Returns titles, times, locations, attendees, and notes.",
+          "I need to get all calendar events for today. Returns titles, times, locations, attendees, and notes.",
+          "Can you get all calendar events for today. Returns titles, times, locations, attendees, and notes.?",
+          "Please get all calendar events for today. Returns titles, times, locations, attendees, and notes."
         ],
         "maps_to_workflow": "today_calendar_flow"
       },
       {
         "id": "upcoming_calendar",
-        "description": "Get upcoming calendar events for the next N days.",
+        "description": "Get upcoming calendar events for the next N days (tomorrow and beyond).",
         "examples": [
-          "Get upcoming calendar events for the next N days.",
-          "I need to get upcoming calendar events for the next N days.",
-          "Can you get upcoming calendar events for the next N days.?",
-          "Please get upcoming calendar events for the next N days."
+          "Get upcoming calendar events for the next N days (tomorrow and beyond).",
+          "I need to get upcoming calendar events for the next N days (tomorrow and beyond).",
+          "Can you get upcoming calendar events for the next N days (tomorrow and beyond).?",
+          "Please get upcoming calendar events for the next N days (tomorrow and beyond)."
         ],
         "maps_to_workflow": "upcoming_calendar_flow"
       },
@@ -624,12 +629,12 @@
       },
       {
         "id": "search_contact",
-        "description": "Search contacts.",
+        "description": "Search contacts by name, relationship, or keyword.",
         "examples": [
-          "Search contacts.",
-          "I need to search contacts.",
-          "Can you search contacts.?",
-          "Please search contacts."
+          "Search contacts by name, relationship, or keyword.",
+          "I need to search contacts by name, relationship, or keyword.",
+          "Can you search contacts by name, relationship, or keyword.?",
+          "Please search contacts by name, relationship, or keyword."
         ],
         "maps_to_workflow": "search_contact_flow",
         "entities": [
@@ -643,12 +648,12 @@
       },
       {
         "id": "get_contact",
-        "description": "Get full contact details.",
+        "description": "Get full contact details by name or ID.",
         "examples": [
-          "Get full contact details.",
-          "I need to get full contact details.",
-          "Can you get full contact details.?",
-          "Please get full contact details."
+          "Get full contact details by name or ID.",
+          "I need to get full contact details by name or ID.",
+          "Can you get full contact details by name or ID.?",
+          "Please get full contact details by name or ID."
         ],
         "maps_to_workflow": "get_contact_flow",
         "entities": [
@@ -662,23 +667,23 @@
       },
       {
         "id": "current_location",
-        "description": "Get user's current location.",
+        "description": "Get user's current location based on time of day.",
         "examples": [
-          "Get user's current location.",
-          "I need to get user's current location.",
-          "Can you get user's current location.?",
-          "Please get user's current location."
+          "Get user's current location based on time of day.",
+          "I need to get user's current location based on time of day.",
+          "Can you get user's current location based on time of day.?",
+          "Please get user's current location based on time of day."
         ],
         "maps_to_workflow": "current_location_flow"
       },
       {
         "id": "send_message",
-        "description": "Send SMS/message to a contact. Always confirm first.",
+        "description": "Send SMS/message to a contact. Always confirm with user before sending.",
         "examples": [
-          "Send SMS/message to a contact. Always confirm first.",
-          "I need to send SMS/message to a contact. Always confirm first.",
-          "Can you send SMS/message to a contact. Always confirm first.?",
-          "Please send SMS/message to a contact. Always confirm first."
+          "Send SMS/message to a contact. Always confirm with user before sending.",
+          "I need to send SMS/message to a contact. Always confirm with user before sending.",
+          "Can you send SMS/message to a contact. Always confirm with user before sending.?",
+          "Please send SMS/message to a contact. Always confirm with user before sending."
         ],
         "maps_to_workflow": "send_message_flow",
         "entities": [
@@ -698,34 +703,34 @@
       },
       {
         "id": "current_weather",
-        "description": "Get current weather.",
+        "description": "Get current weather conditions — temperature, conditions, humidity, wind.",
         "examples": [
-          "Get current weather.",
-          "I need to get current weather.",
-          "Can you get current weather.?",
-          "Please get current weather."
+          "Get current weather conditions — temperature, conditions, humidity, wind.",
+          "I need to get current weather conditions — temperature, conditions, humidity, wind.",
+          "Can you get current weather conditions — temperature, conditions, humidity, wind.?",
+          "Please get current weather conditions — temperature, conditions, humidity, wind."
         ],
         "maps_to_workflow": "current_weather_flow"
       },
       {
         "id": "forecast_weather",
-        "description": "Get weather forecast.",
+        "description": "Get weather forecast for the next N days.",
         "examples": [
-          "Get weather forecast.",
-          "I need to get weather forecast.",
-          "Can you get weather forecast.?",
-          "Please get weather forecast."
+          "Get weather forecast for the next N days.",
+          "I need to get weather forecast for the next N days.",
+          "Can you get weather forecast for the next N days.?",
+          "Please get weather forecast for the next N days."
         ],
         "maps_to_workflow": "forecast_weather_flow"
       },
       {
         "id": "estimate_commute",
-        "description": "Estimate travel time.",
+        "description": "Estimate travel time between two locations.",
         "examples": [
-          "Estimate travel time.",
-          "I need to estimate travel time.",
-          "Can you estimate travel time.?",
-          "Please estimate travel time."
+          "Estimate travel time between two locations.",
+          "I need to estimate travel time between two locations.",
+          "Can you estimate travel time between two locations.?",
+          "Please estimate travel time between two locations."
         ],
         "maps_to_workflow": "estimate_commute_flow",
         "entities": [
@@ -745,12 +750,12 @@
       },
       {
         "id": "recall",
-        "description": "Check user preferences before scheduling.",
+        "description": "Check user preferences before scheduling or taking actions. Search stored memories for rules, likes, and instructions.",
         "examples": [
-          "Check user preferences before scheduling.",
-          "I need to check user preferences before scheduling.",
-          "Can you check user preferences before scheduling.?",
-          "Please check user preferences before scheduling."
+          "Check user preferences before scheduling or taking actions. Search stored memories for rules, likes, and instructions.",
+          "I need to check user preferences before scheduling or taking actions. Search stored memories for rules, likes, and instructions.",
+          "Can you check user preferences before scheduling or taking actions. Search stored memories for rules, likes, and instructions.?",
+          "Please check user preferences before scheduling or taking actions. Search stored memories for rules, likes, and instructions."
         ],
         "maps_to_workflow": "recall_flow",
         "entities": [
@@ -782,7 +787,7 @@
     "workflows": [
       {
         "id": "today_calendar_flow",
-        "name": "Get all calendar events for today.",
+        "name": "Get all calendar events for today. Returns titles, times, locations, attendees, and notes.",
         "description": "Auto-generated workflow for today_calendar",
         "trigger": "today_calendar",
         "steps": [
@@ -793,7 +798,7 @@
       },
       {
         "id": "upcoming_calendar_flow",
-        "name": "Get upcoming calendar events for the next N days.",
+        "name": "Get upcoming calendar events for the next N days (tomorrow and beyond).",
         "description": "Auto-generated workflow for upcoming_calendar",
         "trigger": "upcoming_calendar",
         "steps": [
@@ -815,7 +820,7 @@
       },
       {
         "id": "search_contact_flow",
-        "name": "Search contacts.",
+        "name": "Search contacts by name, relationship, or keyword.",
         "description": "Auto-generated workflow for search_contact",
         "trigger": "search_contact",
         "steps": [
@@ -826,7 +831,7 @@
       },
       {
         "id": "get_contact_flow",
-        "name": "Get full contact details.",
+        "name": "Get full contact details by name or ID.",
         "description": "Auto-generated workflow for get_contact",
         "trigger": "get_contact",
         "steps": [
@@ -837,7 +842,7 @@
       },
       {
         "id": "current_location_flow",
-        "name": "Get user's current location.",
+        "name": "Get user's current location based on time of day.",
         "description": "Auto-generated workflow for current_location",
         "trigger": "current_location",
         "steps": [
@@ -848,7 +853,7 @@
       },
       {
         "id": "send_message_flow",
-        "name": "Send SMS/message to a contact. Always confirm first.",
+        "name": "Send SMS/message to a contact. Always confirm with user before sending.",
         "description": "Auto-generated workflow for send_message",
         "trigger": "send_message",
         "steps": [
@@ -859,7 +864,7 @@
       },
       {
         "id": "current_weather_flow",
-        "name": "Get current weather.",
+        "name": "Get current weather conditions — temperature, conditions, humidity, wind.",
         "description": "Auto-generated workflow for current_weather",
         "trigger": "current_weather",
         "steps": [
@@ -870,7 +875,7 @@
       },
       {
         "id": "forecast_weather_flow",
-        "name": "Get weather forecast.",
+        "name": "Get weather forecast for the next N days.",
         "description": "Auto-generated workflow for forecast_weather",
         "trigger": "forecast_weather",
         "steps": [
@@ -881,7 +886,7 @@
       },
       {
         "id": "estimate_commute_flow",
-        "name": "Estimate travel time.",
+        "name": "Estimate travel time between two locations.",
         "description": "Auto-generated workflow for estimate_commute",
         "trigger": "estimate_commute",
         "steps": [
@@ -892,7 +897,7 @@
       },
       {
         "id": "recall_flow",
-        "name": "Check user preferences before scheduling.",
+        "name": "Check user preferences before scheduling or taking actions. Search stored memories for rules, likes, and instructions.",
         "description": "Auto-generated workflow for recall",
         "trigger": "recall",
         "steps": [
@@ -911,22 +916,22 @@
   "scenarios": [
     {
       "id": "today_calendar",
-      "title": "Get all calendar events for today.",
+      "title": "Get all calendar events for today. Returns titles, times, locations, attendees, and notes.",
       "description": "Test scenario for today calendar",
       "steps": [
-        "User says: \"Get all calendar events for today.\"",
-        "Agent calls device.calendar.today — get all calendar events for today.",
+        "User says: \"Get all calendar events for today. Returns titles, times, locations, attendees, and notes.\"",
+        "Agent calls device.calendar.today — get all calendar events for today. returns titles, times, locations, attendees, and notes.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for today calendar is handled successfully."
     },
     {
       "id": "upcoming_calendar",
-      "title": "Get upcoming calendar events for the next N days.",
+      "title": "Get upcoming calendar events for the next N days (tomorrow and beyond).",
       "description": "Test scenario for upcoming calendar",
       "steps": [
-        "User says: \"Get upcoming calendar events for the next N days.\"",
-        "Agent calls device.calendar.upcoming — get upcoming calendar events for the next n days.",
+        "User says: \"Get upcoming calendar events for the next N days (tomorrow and beyond).\"",
+        "Agent calls device.calendar.upcoming — get upcoming calendar events for the next n days (tomorrow and beyond).",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for upcoming calendar is handled successfully."
@@ -944,88 +949,88 @@
     },
     {
       "id": "search_contact",
-      "title": "Search contacts.",
+      "title": "Search contacts by name, relationship, or keyword.",
       "description": "Test scenario for search contact",
       "steps": [
-        "User says: \"Search contacts.\"",
-        "Agent calls device.contacts.search — search contacts.",
+        "User says: \"Search contacts by name, relationship, or keyword.\"",
+        "Agent calls device.contacts.search — search contacts by name, relationship, or keyword.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for search contact is handled successfully."
     },
     {
       "id": "get_contact",
-      "title": "Get full contact details.",
+      "title": "Get full contact details by name or ID.",
       "description": "Test scenario for get contact",
       "steps": [
-        "User says: \"Get full contact details.\"",
-        "Agent calls device.contacts.get — get full contact details.",
+        "User says: \"Get full contact details by name or ID.\"",
+        "Agent calls device.contacts.get — get full contact details by name or id.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for get contact is handled successfully."
     },
     {
       "id": "current_location",
-      "title": "Get user's current location.",
+      "title": "Get user's current location based on time of day.",
       "description": "Test scenario for current location",
       "steps": [
-        "User says: \"Get user's current location.\"",
-        "Agent calls device.location.current — get user's current location.",
+        "User says: \"Get user's current location based on time of day.\"",
+        "Agent calls device.location.current — get user's current location based on time of day.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for current location is handled successfully."
     },
     {
       "id": "send_message",
-      "title": "Send SMS/message to a contact. Always confirm first.",
+      "title": "Send SMS/message to a contact. Always confirm with user before sending.",
       "description": "Test scenario for send message",
       "steps": [
-        "User says: \"Send SMS/message to a contact. Always confirm first.\"",
-        "Agent calls device.message.send — send sms/message to a contact. always confirm first.",
+        "User says: \"Send SMS/message to a contact. Always confirm with user before sending.\"",
+        "Agent calls device.message.send — send sms/message to a contact. always confirm with user before sending.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for send message is handled successfully."
     },
     {
       "id": "current_weather",
-      "title": "Get current weather.",
+      "title": "Get current weather conditions — temperature, conditions, humidity, wind.",
       "description": "Test scenario for current weather",
       "steps": [
-        "User says: \"Get current weather.\"",
-        "Agent calls device.weather.current — get current weather.",
+        "User says: \"Get current weather conditions — temperature, conditions, humidity, wind.\"",
+        "Agent calls device.weather.current — get current weather conditions — temperature, conditions, humidity, wind.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for current weather is handled successfully."
     },
     {
       "id": "forecast_weather",
-      "title": "Get weather forecast.",
+      "title": "Get weather forecast for the next N days.",
       "description": "Test scenario for forecast weather",
       "steps": [
-        "User says: \"Get weather forecast.\"",
-        "Agent calls device.weather.forecast — get weather forecast.",
+        "User says: \"Get weather forecast for the next N days.\"",
+        "Agent calls device.weather.forecast — get weather forecast for the next n days.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for forecast weather is handled successfully."
     },
     {
       "id": "estimate_commute",
-      "title": "Estimate travel time.",
+      "title": "Estimate travel time between two locations.",
       "description": "Test scenario for estimate commute",
       "steps": [
-        "User says: \"Estimate travel time.\"",
-        "Agent calls device.commute.estimate — estimate travel time.",
+        "User says: \"Estimate travel time between two locations.\"",
+        "Agent calls device.commute.estimate — estimate travel time between two locations.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for estimate commute is handled successfully."
     },
     {
       "id": "recall",
-      "title": "Check user preferences before scheduling.",
+      "title": "Check user preferences before scheduling or taking actions. Search stored memories for rules, likes, and instructions.",
       "description": "Test scenario for recall",
       "steps": [
-        "User says: \"Check user preferences before scheduling.\"",
-        "Agent calls memory.recall — check user preferences before scheduling.",
+        "User says: \"Check user preferences before scheduling or taking actions. Search stored memories for rules, likes, and instructions.\"",
+        "Agent calls memory.recall — check user preferences before scheduling or taking actions. search stored memories for rules, likes, and instructions.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for recall is handled successfully."
@@ -1033,10 +1038,10 @@
   ],
   "role": {
     "name": "Personal Life Manager",
-    "persona": "You are a warm, efficient personal assistant who knows the user intimately. You speak naturally, like a trusted friend who happens to be incredibly organized.\n\nWhen asked about the day, give a smart briefing: highlight key events, flag potential issues (overlapping meetings, travel time needed), and mention important dates.\n\nMESSAGING DELEGATION: For messaging requests, the orchestrator now routes these to the messaging-agent specialist. You retain device.message.send for edge cases.\n\nMEMORY-AWARE SCHEDULING:\nBefore creating any calendar event, ALWAYS check the user's stored preferences first using memory.recall. If a preference conflicts, warn the user and ask for confirmation.\n\nWhen asked about weather or commute, answer directly using your weather and commute tools.\n\nIMPORTANT ROUTING RULES:\n- When the user says 'remember...', 'don't ever...', 'I prefer...' — hand off to memory-keeper.\n- When the user asks for 'morning briefing', 'how is my day' — hand off to daily-intel.\n- For everything else (calendar, messaging, contacts, location, weather, commute) — handle directly.",
+    "persona": "You are a warm, efficient personal assistant who knows the user intimately. You speak naturally, like a trusted friend who happens to be incredibly organized.\n\nWhen asked about the day, give a smart briefing: highlight key events, flag potential issues (overlapping meetings, travel time needed), and mention important dates.\n\nMESSAGING DELEGATION: For messaging requests ('tell X...', 'send a message to...', 'text Mom...'), the orchestrator now routes these to the messaging-agent specialist. You retain device.message.send for edge cases, but primary messaging goes through messaging-agent for relationship-aware tone adaptation.\n\nMEMORY-AWARE SCHEDULING:\nBefore creating any calendar event, ALWAYS check the user's stored preferences first using memory.recall (search for 'schedule', 'meetings', 'calendar', 'time'). If a preference conflicts (e.g., 'no meetings before 10am' and the event is at 9am), warn the user and ask for confirmation before proceeding.\n\nWhen asked about weather or commute, answer directly using your weather and commute tools.\n\nIMPORTANT ROUTING RULES:\n- When the user says 'remember...', 'don't ever...', 'I prefer...', 'always...', 'what did I tell you about...' — hand off to memory-keeper.\n- When the user asks for 'morning briefing', 'how is my day', 'what should I know today', 'daily summary' — hand off to daily-intel.\n- For everything else (calendar queries, messaging, contacts, location, weather, commute) — handle directly with your tools.",
     "goals": [
       "Provide smart daily briefings from calendar data",
-      "Handle messaging naturally",
+      "Handle messaging naturally — 'tell Sarah I'll be late' becomes a real message",
       "Schedule events conversationally",
       "Route memory operations to memory-keeper worker",
       "Route briefing requests to daily-intel worker"

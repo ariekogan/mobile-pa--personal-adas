@@ -1,7 +1,7 @@
 {
   "id": "memory-keeper",
   "name": "Memory Keeper",
-  "description": "Personal assistants forget everything between conversations. Users need persistent memory.",
+  "description": "Personal assistants forget everything between conversations. Users need persistent memory for preferences, facts, and instructions.",
   "version": "1.0.0",
   "phase": "DEPLOYED",
   "ui_capable": false,
@@ -9,13 +9,13 @@
     "memory-mcp"
   ],
   "problem": {
-    "statement": "Personal assistants forget everything between conversations. Users need persistent memory.",
-    "context": "Persistent memory worker skill that stores and recalls user preferences, personal facts, standing instructions, and learned patterns.",
+    "statement": "Personal assistants forget everything between conversations. Users need persistent memory for preferences, facts, and instructions.",
+    "context": "Persistent memory worker skill that stores and recalls user preferences, personal facts, standing instructions, and learned patterns using SQLite-backed storage.",
     "goals": [
-      "Store preferences permanently",
-      "Remember facts",
-      "Honor standing instructions",
-      "Recall relevant memories"
+      "Store preferences like 'no meetings before 10am' permanently",
+      "Remember facts like 'allergic to peanuts' or 'wife's birthday is June 15'",
+      "Honor standing instructions like 'always remind me about medications at 8am'",
+      "Recall relevant memories when asked 'what did I tell you about...'"
     ]
   },
   "tools": [
@@ -23,7 +23,7 @@
       "id": "tool-mem-store",
       "id_status": "permanent",
       "name": "memory.store",
-      "description": "Store a new memory.",
+      "description": "Store a new memory — preference, fact, instruction, or pattern. Use 'preference' for likes/dislikes/rules. Use 'fact' for personal info. Use 'instruction' for standing orders. Use 'pattern' for behavioral patterns.",
       "inputs": [
         {
           "name": "type",
@@ -35,19 +35,19 @@
           "name": "content",
           "type": "string",
           "required": true,
-          "description": "The memory content"
+          "description": "The memory content in natural language"
         },
         {
           "name": "tags",
           "type": "array",
           "required": false,
-          "description": "Tags for categorization"
+          "description": "Tags for categorization (e.g., ['calendar', 'morning'])"
         },
         {
           "name": "context",
           "type": "string",
           "required": false,
-          "description": "Context about when/why stored"
+          "description": "Context about when/why this was stored"
         }
       ],
       "output": {
@@ -88,7 +88,7 @@
       "id": "tool-mem-recall",
       "id_status": "permanent",
       "name": "memory.recall",
-      "description": "Recall memories by search query.",
+      "description": "Recall memories by search query. Searches content and tags. Use when user asks 'what did I tell you about...', 'do you remember...', or to check preferences before actions.",
       "inputs": [
         {
           "name": "query",
@@ -100,13 +100,13 @@
           "name": "type",
           "type": "string",
           "required": false,
-          "description": "Filter by type"
+          "description": "Filter by type: preference, fact, instruction, pattern"
         },
         {
           "name": "limit",
           "type": "number",
           "required": false,
-          "description": "Max results"
+          "description": "Max results (default 10)"
         }
       ],
       "output": {
@@ -151,7 +151,7 @@
       "id": "tool-mem-list",
       "id_status": "permanent",
       "name": "memory.list",
-      "description": "List all stored memories.",
+      "description": "List all stored memories, optionally filtered by type. Use for 'what are my preferences?', 'show all my facts'.",
       "inputs": [
         {
           "name": "type",
@@ -163,7 +163,7 @@
           "name": "limit",
           "type": "number",
           "required": false,
-          "description": "Max results"
+          "description": "Max results (default 20)"
         },
         {
           "name": "offset",
@@ -174,7 +174,7 @@
       ],
       "output": {
         "type": "object",
-        "description": "List of memories"
+        "description": "List of memories with pagination"
       },
       "source": {
         "type": "mcp_bridge",
@@ -212,7 +212,7 @@
       "id": "tool-mem-update",
       "id_status": "permanent",
       "name": "memory.update",
-      "description": "Update an existing memory by ID.",
+      "description": "Update an existing memory by ID. Use when user corrects a stored memory.",
       "inputs": [
         {
           "name": "id",
@@ -277,7 +277,7 @@
       "id": "tool-mem-delete",
       "id_status": "permanent",
       "name": "memory.delete",
-      "description": "Delete a memory by ID.",
+      "description": "Delete a memory by ID. Use when user says 'forget that' or 'remove that preference'.",
       "inputs": [
         {
           "name": "id",
@@ -324,12 +324,12 @@
     "supported": [
       {
         "id": "store",
-        "description": "Store a new memory.",
+        "description": "Store a new memory — preference, fact, instruction, or pattern. Use 'preference' for likes/dislikes/rules. Use 'fact' for personal info. Use 'instruction' for standing orders. Use 'pattern' for behavioral patterns.",
         "examples": [
-          "Store a new memory.",
-          "I need to store a new memory.",
-          "Can you store a new memory.?",
-          "Please store a new memory."
+          "Store a new memory — preference, fact, instruction, or pattern. Use 'preference' for likes/dislikes/rules. Use 'fact' for personal info. Use 'instruction' for standing orders. Use 'pattern' for behavioral patterns.",
+          "I need to store a new memory — preference, fact, instruction, or pattern. Use 'preference' for likes/dislikes/rules. Use 'fact' for personal info. Use 'instruction' for standing orders. Use 'pattern' for behavioral patterns.",
+          "Can you store a new memory — preference, fact, instruction, or pattern. Use 'preference' for likes/dislikes/rules. Use 'fact' for personal info. Use 'instruction' for standing orders. Use 'pattern' for behavioral patterns.?",
+          "Please store a new memory — preference, fact, instruction, or pattern. Use 'preference' for likes/dislikes/rules. Use 'fact' for personal info. Use 'instruction' for standing orders. Use 'pattern' for behavioral patterns."
         ],
         "maps_to_workflow": "store_flow",
         "entities": [
@@ -349,12 +349,12 @@
       },
       {
         "id": "recall",
-        "description": "Recall memories by search query.",
+        "description": "Recall memories by search query. Searches content and tags. Use when user asks 'what did I tell you about...', 'do you remember...', or to check preferences before actions.",
         "examples": [
-          "Recall memories by search query.",
-          "I need to recall memories by search query.",
-          "Can you recall memories by search query.?",
-          "Please recall memories by search query."
+          "Recall memories by search query. Searches content and tags. Use when user asks 'what did I tell you about...', 'do you remember...', or to check preferences before actions.",
+          "I need to recall memories by search query. Searches content and tags. Use when user asks 'what did I tell you about...', 'do you remember...', or to check preferences before actions.",
+          "Can you recall memories by search query. Searches content and tags. Use when user asks 'what did I tell you about...', 'do you remember...', or to check preferences before actions.?",
+          "Please recall memories by search query. Searches content and tags. Use when user asks 'what did I tell you about...', 'do you remember...', or to check preferences before actions."
         ],
         "maps_to_workflow": "recall_flow",
         "entities": [
@@ -368,23 +368,23 @@
       },
       {
         "id": "list",
-        "description": "List all stored memories.",
+        "description": "List all stored memories, optionally filtered by type. Use for 'what are my preferences?', 'show all my facts'.",
         "examples": [
-          "List all stored memories.",
-          "I need to list all stored memories.",
-          "Can you list all stored memories.?",
-          "Please list all stored memories."
+          "List all stored memories, optionally filtered by type. Use for 'what are my preferences?', 'show all my facts'.",
+          "I need to list all stored memories, optionally filtered by type. Use for 'what are my preferences?', 'show all my facts'.",
+          "Can you list all stored memories, optionally filtered by type. Use for 'what are my preferences?', 'show all my facts'.?",
+          "Please list all stored memories, optionally filtered by type. Use for 'what are my preferences?', 'show all my facts'."
         ],
         "maps_to_workflow": "list_flow"
       },
       {
         "id": "update",
-        "description": "Update an existing memory by ID.",
+        "description": "Update an existing memory by ID. Use when user corrects a stored memory.",
         "examples": [
-          "Update an existing memory by ID.",
-          "I need to update an existing memory by ID.",
-          "Can you update an existing memory by ID.?",
-          "Please update an existing memory by ID."
+          "Update an existing memory by ID. Use when user corrects a stored memory.",
+          "I need to update an existing memory by ID. Use when user corrects a stored memory.",
+          "Can you update an existing memory by ID. Use when user corrects a stored memory.?",
+          "Please update an existing memory by ID. Use when user corrects a stored memory."
         ],
         "maps_to_workflow": "update_flow",
         "entities": [
@@ -398,12 +398,12 @@
       },
       {
         "id": "delete",
-        "description": "Delete a memory by ID.",
+        "description": "Delete a memory by ID. Use when user says 'forget that' or 'remove that preference'.",
         "examples": [
-          "Delete a memory by ID.",
-          "I need to delete a memory by ID.",
-          "Can you delete a memory by ID.?",
-          "Please delete a memory by ID."
+          "Delete a memory by ID. Use when user says 'forget that' or 'remove that preference'.",
+          "I need to delete a memory by ID. Use when user says 'forget that' or 'remove that preference'.",
+          "Can you delete a memory by ID. Use when user says 'forget that' or 'remove that preference'.?",
+          "Please delete a memory by ID. Use when user says 'forget that' or 'remove that preference'."
         ],
         "maps_to_workflow": "delete_flow",
         "entities": [
@@ -435,7 +435,7 @@
     "workflows": [
       {
         "id": "store_flow",
-        "name": "Store a new memory.",
+        "name": "Store a new memory — preference, fact, instruction, or pattern. Use 'preference' for likes/dislikes/rules. Use 'fact' for personal info. Use 'instruction' for standing orders. Use 'pattern' for behavioral patterns.",
         "description": "Auto-generated workflow for store",
         "trigger": "store",
         "steps": [
@@ -446,7 +446,7 @@
       },
       {
         "id": "recall_flow",
-        "name": "Recall memories by search query.",
+        "name": "Recall memories by search query. Searches content and tags. Use when user asks 'what did I tell you about...', 'do you remember...', or to check preferences before actions.",
         "description": "Auto-generated workflow for recall",
         "trigger": "recall",
         "steps": [
@@ -457,7 +457,7 @@
       },
       {
         "id": "list_flow",
-        "name": "List all stored memories.",
+        "name": "List all stored memories, optionally filtered by type. Use for 'what are my preferences?', 'show all my facts'.",
         "description": "Auto-generated workflow for list",
         "trigger": "list",
         "steps": [
@@ -468,7 +468,7 @@
       },
       {
         "id": "update_flow",
-        "name": "Update an existing memory by ID.",
+        "name": "Update an existing memory by ID. Use when user corrects a stored memory.",
         "description": "Auto-generated workflow for update",
         "trigger": "update",
         "steps": [
@@ -479,7 +479,7 @@
       },
       {
         "id": "delete_flow",
-        "name": "Delete a memory by ID.",
+        "name": "Delete a memory by ID. Use when user says 'forget that' or 'remove that preference'.",
         "description": "Auto-generated workflow for delete",
         "trigger": "delete",
         "steps": [
@@ -498,55 +498,55 @@
   "scenarios": [
     {
       "id": "store",
-      "title": "Store a new memory.",
+      "title": "Store a new memory — preference, fact, instruction, or pattern. Use 'preference' for likes/dislikes/rules. Use 'fact' for personal info. Use 'instruction' for standing orders. Use 'pattern' for behavioral patterns.",
       "description": "Test scenario for store",
       "steps": [
-        "User says: \"Store a new memory.\"",
-        "Agent calls memory.store — store a new memory.",
+        "User says: \"Store a new memory — preference, fact, instruction, or pattern. Use 'preference' for likes/dislikes/rules. Use 'fact' for personal info. Use 'instruction' for standing orders. Use 'pattern' for behavioral patterns.\"",
+        "Agent calls memory.store — store a new memory — preference, fact, instruction, or pattern. use 'preference' for likes/dislikes/rules. use 'fact' for personal info. use 'instruction' for standing orders. use 'pattern' for behavioral patterns.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for store is handled successfully."
     },
     {
       "id": "recall",
-      "title": "Recall memories by search query.",
+      "title": "Recall memories by search query. Searches content and tags. Use when user asks 'what did I tell you about...', 'do you remember...', or to check preferences before actions.",
       "description": "Test scenario for recall",
       "steps": [
-        "User says: \"Recall memories by search query.\"",
-        "Agent calls memory.recall — recall memories by search query.",
+        "User says: \"Recall memories by search query. Searches content and tags. Use when user asks 'what did I tell you about...', 'do you remember...', or to check preferences before actions.\"",
+        "Agent calls memory.recall — recall memories by search query. searches content and tags. use when user asks 'what did i tell you about...', 'do you remember...', or to check preferences before actions.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for recall is handled successfully."
     },
     {
       "id": "list",
-      "title": "List all stored memories.",
+      "title": "List all stored memories, optionally filtered by type. Use for 'what are my preferences?', 'show all my facts'.",
       "description": "Test scenario for list",
       "steps": [
-        "User says: \"List all stored memories.\"",
-        "Agent calls memory.list — list all stored memories.",
+        "User says: \"List all stored memories, optionally filtered by type. Use for 'what are my preferences?', 'show all my facts'.\"",
+        "Agent calls memory.list — list all stored memories, optionally filtered by type. use for 'what are my preferences?', 'show all my facts'.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for list is handled successfully."
     },
     {
       "id": "update",
-      "title": "Update an existing memory by ID.",
+      "title": "Update an existing memory by ID. Use when user corrects a stored memory.",
       "description": "Test scenario for update",
       "steps": [
-        "User says: \"Update an existing memory by ID.\"",
-        "Agent calls memory.update — update an existing memory by id.",
+        "User says: \"Update an existing memory by ID. Use when user corrects a stored memory.\"",
+        "Agent calls memory.update — update an existing memory by id. use when user corrects a stored memory.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for update is handled successfully."
     },
     {
       "id": "delete",
-      "title": "Delete a memory by ID.",
+      "title": "Delete a memory by ID. Use when user says 'forget that' or 'remove that preference'.",
       "description": "Test scenario for delete",
       "steps": [
-        "User says: \"Delete a memory by ID.\"",
-        "Agent calls memory.delete — delete a memory by id.",
+        "User says: \"Delete a memory by ID. Use when user says 'forget that' or 'remove that preference'.\"",
+        "Agent calls memory.delete — delete a memory by id. use when user says 'forget that' or 'remove that preference'.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for delete is handled successfully."
@@ -554,15 +554,15 @@
   ],
   "role": {
     "name": "Memory Keeper",
-    "persona": "You are the user's persistent memory — you never forget. When the user tells you to remember something, you categorize it properly:\n- PREFERENCE: Rules, likes, dislikes\n- FACT: Personal information\n- INSTRUCTION: Standing orders\n- PATTERN: Behavioral patterns\n\nAlways confirm what you stored. When asked to recall, search intelligently and present findings clearly.",
+    "persona": "You are the user's persistent memory — you never forget. When the user tells you to remember something, you categorize it properly:\n\n- PREFERENCE: Rules, likes, dislikes ('no meetings before 10am', 'I prefer window seats')\n- FACT: Personal information ('wife's name is Sarah', 'allergic to peanuts', 'Emma's soccer is on Tuesdays')\n- INSTRUCTION: Standing orders ('always remind me about medications', 'never schedule over lunch')\n- PATTERN: Behavioral patterns ('usually leaves work at 5:30')\n\nAlways confirm what you stored. When asked to recall, search intelligently and present findings clearly. If the user wants to update or remove a memory, do it immediately.\n\nTag memories with relevant keywords for better recall later.",
     "goals": [
-      "Store memories with proper categorization",
-      "Recall memories intelligently",
+      "Store memories with proper categorization and tags",
+      "Recall memories intelligently using search",
       "Update and delete memories on request",
       "Always confirm what was stored/recalled"
     ],
     "limitations": [
-      "Cannot access calendar or contacts",
+      "Cannot access calendar or contacts directly — only memory store",
       "Cannot send messages or create events"
     ],
     "communication_style": {

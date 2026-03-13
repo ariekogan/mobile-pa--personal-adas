@@ -1,7 +1,7 @@
 {
   "id": "teach-this",
   "name": "TeachThis",
-  "description": "Users need to teach their PA behaviors through natural language.",
+  "description": "Users need to teach their PA behaviors through natural language — instructions, corrections, and demonstrations — that get stored as structured rules the system can act on.",
   "version": "1.0.0",
   "phase": "DEPLOYED",
   "ui_capable": false,
@@ -9,14 +9,14 @@
     "memory-mcp"
   ],
   "problem": {
-    "statement": "Users need to teach their PA behaviors through natural language.",
-    "context": "Teachability worker skill that interprets instructions into structured rules.",
+    "statement": "Users need to teach their PA behaviors through natural language — instructions, corrections, and demonstrations — that get stored as structured rules the system can act on.",
+    "context": "Teachability worker skill that interprets natural language teaching into structured rules with triggers, conditions, and actions. Rules are stored in memory-mcp and matched by the orchestrator before routing decisions.",
     "goals": [
-      "Interpret instructions into rules",
-      "Extract preference deltas from corrections",
-      "Convert demonstrated patterns into rules",
-      "Confirm before storing",
-      "Support rule management"
+      "Interpret natural language instructions into structured automation rules",
+      "Extract preference deltas from user corrections to previous suggestions",
+      "Convert demonstrated patterns into reusable rules with context bindings",
+      "Always confirm extracted rules with the user before storing",
+      "Support enabling, disabling, updating, and deleting taught rules"
     ]
   },
   "tools": [
@@ -24,36 +24,36 @@
       "id": "tool-teach-store",
       "id_status": "permanent",
       "name": "memory.store",
-      "description": "Store a new rule.",
+      "description": "Store a new taught rule. Use type='rule' and content as structured JSON string with trigger, conditions, action, etc. Include relevant tags for matching.",
       "inputs": [
         {
           "name": "type",
           "type": "string",
           "required": true,
-          "description": "Always 'rule'"
+          "description": "Always 'rule' for taught rules"
         },
         {
           "name": "content",
           "type": "string",
           "required": true,
-          "description": "Structured rule JSON"
+          "description": "Structured rule JSON: {trigger, trigger_type, conditions, action, action_type, confidence, active, created_from, description}"
         },
         {
           "name": "tags",
           "type": "array",
           "required": false,
-          "description": "Tags for matching"
+          "description": "Tags for matching: contact names, situation types, keywords"
         },
         {
           "name": "context",
           "type": "string",
           "required": false,
-          "description": "Context"
+          "description": "Context about when/why this rule was taught"
         }
       ],
       "output": {
         "type": "object",
-        "description": "Stored rule confirmation"
+        "description": "Stored rule confirmation with memory ID"
       },
       "source": {
         "type": "mcp_bridge",
@@ -89,7 +89,7 @@
       "id": "tool-teach-recall",
       "id_status": "permanent",
       "name": "memory.recall",
-      "description": "Search existing rules.",
+      "description": "Search existing rules and memories. Use to check for conflicts before creating a new rule.",
       "inputs": [
         {
           "name": "query",
@@ -101,7 +101,7 @@
           "name": "type",
           "type": "string",
           "required": false,
-          "description": "Filter: 'rule'"
+          "description": "Filter: 'rule' for taught rules, or preference/fact/instruction"
         },
         {
           "name": "limit",
@@ -152,13 +152,13 @@
       "id": "tool-teach-list",
       "id_status": "permanent",
       "name": "memory.list",
-      "description": "List all rules.",
+      "description": "List all taught rules. Use type='rule' to see all rules.",
       "inputs": [
         {
           "name": "type",
           "type": "string",
           "required": false,
-          "description": "Filter"
+          "description": "Filter by type (use 'rule' for taught rules)"
         },
         {
           "name": "limit",
@@ -170,12 +170,12 @@
           "name": "offset",
           "type": "number",
           "required": false,
-          "description": "Offset"
+          "description": "Pagination offset"
         }
       ],
       "output": {
         "type": "object",
-        "description": "List of rules"
+        "description": "List of rules with pagination"
       },
       "source": {
         "type": "mcp_bridge",
@@ -213,19 +213,19 @@
       "id": "tool-teach-update",
       "id_status": "permanent",
       "name": "memory.update",
-      "description": "Update a rule.",
+      "description": "Update an existing rule by ID. Use to modify, enable, or disable a rule.",
       "inputs": [
         {
           "name": "id",
           "type": "number",
           "required": true,
-          "description": "Rule ID"
+          "description": "Rule memory ID"
         },
         {
           "name": "content",
           "type": "string",
           "required": false,
-          "description": "Updated JSON"
+          "description": "Updated rule JSON"
         },
         {
           "name": "tags",
@@ -278,13 +278,13 @@
       "id": "tool-teach-delete",
       "id_status": "permanent",
       "name": "memory.delete",
-      "description": "Delete a rule.",
+      "description": "Delete a taught rule by ID. Use when user says 'forget that rule' or 'remove that automation'.",
       "inputs": [
         {
           "name": "id",
           "type": "number",
           "required": true,
-          "description": "Rule ID"
+          "description": "Rule memory ID to delete"
         }
       ],
       "output": {
@@ -324,13 +324,13 @@
       "id": "tool-teach-rules-match",
       "id_status": "permanent",
       "name": "memory.rules.match",
-      "description": "Check for conflicting rules.",
+      "description": "Check for existing rules that match a situation. Use to detect conflicts before creating a new rule.",
       "inputs": [
         {
           "name": "situation",
           "type": "string",
           "required": true,
-          "description": "Situation to match"
+          "description": "Situation description to match against"
         },
         {
           "name": "limit",
@@ -341,7 +341,7 @@
       ],
       "output": {
         "type": "object",
-        "description": "Matching rules"
+        "description": "Matching rules with relevance scores"
       },
       "source": {
         "type": "mcp_bridge",
@@ -376,11 +376,11 @@
       "id": "tool-teach-rules-count",
       "id_status": "permanent",
       "name": "memory.rules.count",
-      "description": "Count taught rules.",
+      "description": "Count total taught rules — active and inactive.",
       "inputs": [],
       "output": {
         "type": "object",
-        "description": "Rule counts"
+        "description": "Rule counts: total, active, inactive"
       },
       "source": {
         "type": "mcp_bridge",
@@ -414,12 +414,12 @@
     "supported": [
       {
         "id": "store",
-        "description": "Store a new rule.",
+        "description": "Store a new taught rule. Use type='rule' and content as structured JSON string with trigger, conditions, action, etc. Include relevant tags for matching.",
         "examples": [
-          "Store a new rule.",
-          "I need to store a new rule.",
-          "Can you store a new rule.?",
-          "Please store a new rule."
+          "Store a new taught rule. Use type='rule' and content as structured JSON string with trigger, conditions, action, etc. Include relevant tags for matching.",
+          "I need to store a new taught rule. Use type='rule' and content as structured JSON string with trigger, conditions, action, etc. Include relevant tags for matching.",
+          "Can you store a new taught rule. Use type='rule' and content as structured JSON string with trigger, conditions, action, etc. Include relevant tags for matching.?",
+          "Please store a new taught rule. Use type='rule' and content as structured JSON string with trigger, conditions, action, etc. Include relevant tags for matching."
         ],
         "maps_to_workflow": "store_flow",
         "entities": [
@@ -439,12 +439,12 @@
       },
       {
         "id": "recall",
-        "description": "Search existing rules.",
+        "description": "Search existing rules and memories. Use to check for conflicts before creating a new rule.",
         "examples": [
-          "Search existing rules.",
-          "I need to search existing rules.",
-          "Can you search existing rules.?",
-          "Please search existing rules."
+          "Search existing rules and memories. Use to check for conflicts before creating a new rule.",
+          "I need to search existing rules and memories. Use to check for conflicts before creating a new rule.",
+          "Can you search existing rules and memories. Use to check for conflicts before creating a new rule.?",
+          "Please search existing rules and memories. Use to check for conflicts before creating a new rule."
         ],
         "maps_to_workflow": "recall_flow",
         "entities": [
@@ -458,23 +458,23 @@
       },
       {
         "id": "list",
-        "description": "List all rules.",
+        "description": "List all taught rules. Use type='rule' to see all rules.",
         "examples": [
-          "List all rules.",
-          "I need to list all rules.",
-          "Can you list all rules.?",
-          "Please list all rules."
+          "List all taught rules. Use type='rule' to see all rules.",
+          "I need to list all taught rules. Use type='rule' to see all rules.",
+          "Can you list all taught rules. Use type='rule' to see all rules.?",
+          "Please list all taught rules. Use type='rule' to see all rules."
         ],
         "maps_to_workflow": "list_flow"
       },
       {
         "id": "update",
-        "description": "Update a rule.",
+        "description": "Update an existing rule by ID. Use to modify, enable, or disable a rule.",
         "examples": [
-          "Update a rule.",
-          "I need to update a rule.",
-          "Can you update a rule.?",
-          "Please update a rule."
+          "Update an existing rule by ID. Use to modify, enable, or disable a rule.",
+          "I need to update an existing rule by ID. Use to modify, enable, or disable a rule.",
+          "Can you update an existing rule by ID. Use to modify, enable, or disable a rule.?",
+          "Please update an existing rule by ID. Use to modify, enable, or disable a rule."
         ],
         "maps_to_workflow": "update_flow",
         "entities": [
@@ -488,12 +488,12 @@
       },
       {
         "id": "delete",
-        "description": "Delete a rule.",
+        "description": "Delete a taught rule by ID. Use when user says 'forget that rule' or 'remove that automation'.",
         "examples": [
-          "Delete a rule.",
-          "I need to delete a rule.",
-          "Can you delete a rule.?",
-          "Please delete a rule."
+          "Delete a taught rule by ID. Use when user says 'forget that rule' or 'remove that automation'.",
+          "I need to delete a taught rule by ID. Use when user says 'forget that rule' or 'remove that automation'.",
+          "Can you delete a taught rule by ID. Use when user says 'forget that rule' or 'remove that automation'.?",
+          "Please delete a taught rule by ID. Use when user says 'forget that rule' or 'remove that automation'."
         ],
         "maps_to_workflow": "delete_flow",
         "entities": [
@@ -507,12 +507,12 @@
       },
       {
         "id": "match_rule",
-        "description": "Check for conflicting rules.",
+        "description": "Check for existing rules that match a situation. Use to detect conflicts before creating a new rule.",
         "examples": [
-          "Check for conflicting rules.",
-          "I need to check for conflicting rules.",
-          "Can you check for conflicting rules.?",
-          "Please check for conflicting rules."
+          "Check for existing rules that match a situation. Use to detect conflicts before creating a new rule.",
+          "I need to check for existing rules that match a situation. Use to detect conflicts before creating a new rule.",
+          "Can you check for existing rules that match a situation. Use to detect conflicts before creating a new rule.?",
+          "Please check for existing rules that match a situation. Use to detect conflicts before creating a new rule."
         ],
         "maps_to_workflow": "match_rule_flow",
         "entities": [
@@ -526,12 +526,12 @@
       },
       {
         "id": "count_rule",
-        "description": "Count taught rules.",
+        "description": "Count total taught rules — active and inactive.",
         "examples": [
-          "Count taught rules.",
-          "I need to count taught rules.",
-          "Can you count taught rules.?",
-          "Please count taught rules."
+          "Count total taught rules — active and inactive.",
+          "I need to count total taught rules — active and inactive.",
+          "Can you count total taught rules — active and inactive.?",
+          "Please count total taught rules — active and inactive."
         ],
         "maps_to_workflow": "count_rule_flow"
       }
@@ -555,7 +555,7 @@
     "workflows": [
       {
         "id": "store_flow",
-        "name": "Store a new rule.",
+        "name": "Store a new taught rule. Use type='rule' and content as structured JSON string with trigger, conditions, action, etc. Include relevant tags for matching.",
         "description": "Auto-generated workflow for store",
         "trigger": "store",
         "steps": [
@@ -566,7 +566,7 @@
       },
       {
         "id": "recall_flow",
-        "name": "Search existing rules.",
+        "name": "Search existing rules and memories. Use to check for conflicts before creating a new rule.",
         "description": "Auto-generated workflow for recall",
         "trigger": "recall",
         "steps": [
@@ -577,7 +577,7 @@
       },
       {
         "id": "list_flow",
-        "name": "List all rules.",
+        "name": "List all taught rules. Use type='rule' to see all rules.",
         "description": "Auto-generated workflow for list",
         "trigger": "list",
         "steps": [
@@ -588,7 +588,7 @@
       },
       {
         "id": "update_flow",
-        "name": "Update a rule.",
+        "name": "Update an existing rule by ID. Use to modify, enable, or disable a rule.",
         "description": "Auto-generated workflow for update",
         "trigger": "update",
         "steps": [
@@ -599,7 +599,7 @@
       },
       {
         "id": "delete_flow",
-        "name": "Delete a rule.",
+        "name": "Delete a taught rule by ID. Use when user says 'forget that rule' or 'remove that automation'.",
         "description": "Auto-generated workflow for delete",
         "trigger": "delete",
         "steps": [
@@ -610,7 +610,7 @@
       },
       {
         "id": "match_rule_flow",
-        "name": "Check for conflicting rules.",
+        "name": "Check for existing rules that match a situation. Use to detect conflicts before creating a new rule.",
         "description": "Auto-generated workflow for match_rule",
         "trigger": "match_rule",
         "steps": [
@@ -621,7 +621,7 @@
       },
       {
         "id": "count_rule_flow",
-        "name": "Count taught rules.",
+        "name": "Count total taught rules — active and inactive.",
         "description": "Auto-generated workflow for count_rule",
         "trigger": "count_rule",
         "steps": [
@@ -640,77 +640,77 @@
   "scenarios": [
     {
       "id": "store",
-      "title": "Store a new rule.",
+      "title": "Store a new taught rule. Use type='rule' and content as structured JSON string with trigger, conditions, action, etc. Include relevant tags for matching.",
       "description": "Test scenario for store",
       "steps": [
-        "User says: \"Store a new rule.\"",
-        "Agent calls memory.store — store a new rule.",
+        "User says: \"Store a new taught rule. Use type='rule' and content as structured JSON string with trigger, conditions, action, etc. Include relevant tags for matching.\"",
+        "Agent calls memory.store — store a new taught rule. use type='rule' and content as structured json string with trigger, conditions, action, etc. include relevant tags for matching.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for store is handled successfully."
     },
     {
       "id": "recall",
-      "title": "Search existing rules.",
+      "title": "Search existing rules and memories. Use to check for conflicts before creating a new rule.",
       "description": "Test scenario for recall",
       "steps": [
-        "User says: \"Search existing rules.\"",
-        "Agent calls memory.recall — search existing rules.",
+        "User says: \"Search existing rules and memories. Use to check for conflicts before creating a new rule.\"",
+        "Agent calls memory.recall — search existing rules and memories. use to check for conflicts before creating a new rule.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for recall is handled successfully."
     },
     {
       "id": "list",
-      "title": "List all rules.",
+      "title": "List all taught rules. Use type='rule' to see all rules.",
       "description": "Test scenario for list",
       "steps": [
-        "User says: \"List all rules.\"",
-        "Agent calls memory.list — list all rules.",
+        "User says: \"List all taught rules. Use type='rule' to see all rules.\"",
+        "Agent calls memory.list — list all taught rules. use type='rule' to see all rules.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for list is handled successfully."
     },
     {
       "id": "update",
-      "title": "Update a rule.",
+      "title": "Update an existing rule by ID. Use to modify, enable, or disable a rule.",
       "description": "Test scenario for update",
       "steps": [
-        "User says: \"Update a rule.\"",
-        "Agent calls memory.update — update a rule.",
+        "User says: \"Update an existing rule by ID. Use to modify, enable, or disable a rule.\"",
+        "Agent calls memory.update — update an existing rule by id. use to modify, enable, or disable a rule.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for update is handled successfully."
     },
     {
       "id": "delete",
-      "title": "Delete a rule.",
+      "title": "Delete a taught rule by ID. Use when user says 'forget that rule' or 'remove that automation'.",
       "description": "Test scenario for delete",
       "steps": [
-        "User says: \"Delete a rule.\"",
-        "Agent calls memory.delete — delete a rule.",
+        "User says: \"Delete a taught rule by ID. Use when user says 'forget that rule' or 'remove that automation'.\"",
+        "Agent calls memory.delete — delete a taught rule by id. use when user says 'forget that rule' or 'remove that automation'.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for delete is handled successfully."
     },
     {
       "id": "match_rule",
-      "title": "Check for conflicting rules.",
+      "title": "Check for existing rules that match a situation. Use to detect conflicts before creating a new rule.",
       "description": "Test scenario for match rule",
       "steps": [
-        "User says: \"Check for conflicting rules.\"",
-        "Agent calls memory.rules.match — check for conflicting rules.",
+        "User says: \"Check for existing rules that match a situation. Use to detect conflicts before creating a new rule.\"",
+        "Agent calls memory.rules.match — check for existing rules that match a situation. use to detect conflicts before creating a new rule.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for match rule is handled successfully."
     },
     {
       "id": "count_rule",
-      "title": "Count taught rules.",
+      "title": "Count total taught rules — active and inactive.",
       "description": "Test scenario for count rule",
       "steps": [
-        "User says: \"Count taught rules.\"",
-        "Agent calls memory.rules.count — count taught rules.",
+        "User says: \"Count total taught rules — active and inactive.\"",
+        "Agent calls memory.rules.count — count total taught rules — active and inactive.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for count rule is handled successfully."
@@ -718,18 +718,18 @@
   ],
   "role": {
     "name": "Teaching Interpreter",
-    "persona": "You are the teachability engine. Users teach you by giving instructions, correcting behavior, or demonstrating. You interpret these into STRUCTURED RULES.\n\nThree modes: INSTRUCTION (when X do Y), CORRECTION (that was too formal), DEMONSTRATION (I just did X, teach that).\n\nEvery rule has: trigger, trigger_type, conditions, action, action_type, confidence, active, created_from, description.\n\nAlways: 1. Parse intent 2. Check conflicts 3. Draft rule 4. Confirm with user 5. Store after approval.",
+    "persona": "You are the teachability engine for a personal assistant. Users teach you by giving instructions, correcting your behavior, or demonstrating what they want. Your job is to interpret these into STRUCTURED RULES that the system can match and act on automatically.\n\nTHREE TEACHING MODES:\n\n1. INSTRUCTION MODE — User says 'when X, do Y':\n   - 'When my boss calls, always ring through' → extract trigger, condition, action\n   - 'Never schedule meetings before 10am' → extract time-based rule\n   - 'Always send Sarah a heads up if I'm running late' → extract situation-bound rule\n   Parse into structured rule JSON with trigger, conditions, action, and description.\n\n2. CORRECTION MODE — User edits or rejects a suggestion:\n   - 'That message was too formal, make it more casual for David' → extract tone preference for contact\n   - 'No, I prefer to handle that myself' → extract autonomy preference\n   - 'Actually, use my work email for that' → extract channel preference\n   Extract the delta between what was suggested and what the user wanted, then store as a rule.\n\n3. DEMONSTRATION MODE — User says 'I just did X, teach that':\n   - 'I just silenced notifications because I'm in a meeting. Teach that.' → extract pattern\n   - 'I always check weather before leaving. Remember that.' → extract routine\n   Extract the pattern, ask clarifying questions about when it applies, then store as a rule.\n\nRULE STRUCTURE — every rule you create MUST be stored as a JSON string with these fields:\n- trigger: what activates this rule (e.g., 'call from boss', 'meeting starting', 'morning routine')\n- trigger_type: category — situation, event, keyword, time, or contact\n- conditions: optional array of specific conditions [{field, op, value}]\n- action: what to do (e.g., 'ring_always', 'suppress_notifications', 'send_eta_message')\n- action_type: category — route, respond, configure, or notify\n- confidence: start at 0.8 for clear instructions, 0.6 for demonstrations\n- active: true\n- created_from: instruction, correction, or demonstration\n- description: human-readable explanation\n\nWhen storing, use type='rule' and include relevant tags for matching: contact names, situation types, time of day, actions.\n\nALWAYS:\n1. Parse the user's intent\n2. Check for conflicting existing rules (memory.rules.match or memory.recall with type='rule')\n3. Draft the structured rule\n4. Show it to the user in plain language: 'I understood this as: When [trigger], then [action]. Is that right?'\n5. Only store after user confirms\n6. If unclear, ask clarifying questions\n\nRULE MANAGEMENT:\n- List rules: use memory.list with type='rule'\n- Update rules: use memory.update to change content JSON\n- Delete rules: use memory.delete\n- Disable: update the rule JSON with active=false\n- Search rules: use memory.recall with type='rule'\n\nCONFLICTS:\nIf a new rule conflicts with an existing one, tell the user:\n'You have an existing rule: [old rule]. This new one would conflict. Which should I keep?'",
     "goals": [
-      "Interpret teaching into structured rules",
-      "Confirm every rule before storing",
-      "Handle instruction, correction, demonstration modes",
-      "Manage existing rules",
-      "Detect conflicts"
+      "Interpret natural language teaching into structured rules",
+      "Confirm every rule with the user before storing",
+      "Handle all three teaching modes: instruction, correction, demonstration",
+      "Manage existing rules: list, update, disable, delete",
+      "Detect and resolve rule conflicts"
     ],
     "limitations": [
-      "Only memory tools",
-      "Cannot execute rules — only creates them",
-      "Must confirm every rule"
+      "Cannot access device tools directly — only memory tools",
+      "Cannot execute rules — only creates them for the orchestrator to match",
+      "Must confirm every rule before storing"
     ],
     "communication_style": {
       "tone": "warm",

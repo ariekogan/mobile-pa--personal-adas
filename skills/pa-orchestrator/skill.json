@@ -29,7 +29,7 @@
       "id": "tool-cal-today",
       "id_status": "permanent",
       "name": "device.calendar.today",
-      "description": "Get all calendar events for today.",
+      "description": "Get all calendar events for today. Returns titles, times, locations, attendees, and notes.",
       "inputs": [],
       "output": {
         "type": "object",
@@ -110,7 +110,7 @@
       "id": "tool-location",
       "id_status": "permanent",
       "name": "device.location.current",
-      "description": "Get user's current location.",
+      "description": "Get user's current location based on time of day.",
       "inputs": [],
       "output": {
         "type": "object",
@@ -294,7 +294,7 @@
       "id": "tool-mem-recall",
       "id_status": "permanent",
       "name": "memory.recall",
-      "description": "Check user preferences, taught rules, and facts.",
+      "description": "Check user preferences, taught rules, and facts. Search long-term memory.",
       "inputs": [
         {
           "name": "query",
@@ -306,7 +306,7 @@
           "name": "type",
           "type": "string",
           "required": false,
-          "description": "Filter by type"
+          "description": "Filter by type: preference, fact, instruction, pattern, rule, user_model"
         },
         {
           "name": "limit",
@@ -337,8 +337,13 @@
               "query": "search term"
             },
             "output": {
-              "success": true,
-              "data": {}
+              "results": [
+                {
+                  "id": 1,
+                  "name": "Example item"
+                }
+              ],
+              "total_count": 1
             },
             "description": "Auto-generated example for memory.recall"
           }
@@ -352,13 +357,13 @@
       "id": "tool-rules-match",
       "id_status": "permanent",
       "name": "memory.rules.match",
-      "description": "Check taught rules that match the current situation.",
+      "description": "Check taught rules that match the current situation. Call this BEFORE routing to see if user has taught a specific behavior for this situation.",
       "inputs": [
         {
           "name": "situation",
           "type": "string",
           "required": true,
-          "description": "Description of current situation"
+          "description": "Description of current situation to match against taught rules"
         },
         {
           "name": "limit",
@@ -404,7 +409,7 @@
       "id": "tool-ctx-store",
       "id_status": "permanent",
       "name": "context.store",
-      "description": "Store an ephemeral context object (situation or plan).",
+      "description": "Store an ephemeral context object (situation or plan). Use after detecting a situation so workers can read it.",
       "inputs": [
         {
           "name": "type",
@@ -463,7 +468,7 @@
       "id": "tool-ctx-read",
       "id_status": "permanent",
       "name": "context.read",
-      "description": "Read active ephemeral context.",
+      "description": "Read active ephemeral context — current situations and plans. Check what's happening RIGHT NOW.",
       "inputs": [
         {
           "name": "type",
@@ -513,7 +518,7 @@
       "id": "tool-ctx-resolve",
       "id_status": "permanent",
       "name": "context.resolve",
-      "description": "Mark a situation or plan as resolved.",
+      "description": "Mark a situation or plan as resolved after it's been handled.",
       "inputs": [
         {
           "name": "id",
@@ -525,7 +530,7 @@
           "name": "status",
           "type": "string",
           "required": false,
-          "description": "resolved or abandoned"
+          "description": "resolved or abandoned (default resolved)"
         }
       ],
       "output": {
@@ -565,7 +570,7 @@
       "id": "tool-integrations-list",
       "id_status": "permanent",
       "name": "integrations.list",
-      "description": "List all available external integrations with status.",
+      "description": "List all available external integrations with status/setup tool names. Use for 'what can I connect' or before checking a specific channel.",
       "inputs": [],
       "output": {
         "type": "object",
@@ -607,13 +612,13 @@
       "id": "tool-integrations-check",
       "id_status": "permanent",
       "name": "integrations.check",
-      "description": "Check a specific integration by channel name.",
+      "description": "Check a specific integration by channel name. Returns which tools to call for status/setup.",
       "inputs": [
         {
           "name": "channel",
           "type": "string",
           "required": true,
-          "description": "Channel ID"
+          "description": "Channel ID — e.g. 'email', 'whatsapp'"
         }
       ],
       "output": {
@@ -653,7 +658,7 @@
       "id": "tool-email-status",
       "id_status": "permanent",
       "name": "email.status",
-      "description": "Check if Gmail is connected.",
+      "description": "Check if Gmail is connected and working.",
       "inputs": [],
       "output": {
         "type": "object",
@@ -690,11 +695,11 @@
       "id": "tool-email-setup",
       "id_status": "permanent",
       "name": "email.setup",
-      "description": "Get the Gmail sign-in link.",
+      "description": "Get the Gmail sign-in link for the user to connect their account.",
       "inputs": [],
       "output": {
         "type": "object",
-        "description": "OAuth URL"
+        "description": "OAuth URL for Gmail sign-in"
       },
       "source": {
         "type": "mcp_bridge",
@@ -1035,7 +1040,7 @@
           "memory.rules.count"
         ],
         "effect": "deny",
-        "message": "You cannot call memory write tools directly. Hand off to memory-keeper or teach-this instead."
+        "message": "You cannot call memory write tools directly. Hand off to memory-keeper (preferences/facts) or teach-this (rules) instead."
       },
       {
         "tools": [
@@ -1053,7 +1058,7 @@
       "type": "schedule",
       "every": "PT5M",
       "enabled": true,
-      "prompt": "Run a proactive situation check. Do NOT respond unless something actionable is detected.\n\nSTEP 1 — GATHER SIGNALS (call all in parallel):\n- device.calendar.today → today's events\n- device.location.current → where the user is now\n- device.weather.current → current conditions\n- context.read → any active situations already being tracked\n\nSTEP 2 — DETECT SITUATIONS:\nFor each upcoming event, check:\na) RUNNING_LATE: If next event starts within 45 minutes, call device.commute.estimate. If commute > minutes_until_event: USER IS LATE.\nb) MEETING_STARTING: If event starts in 5-15 minutes, notify user.\nc) END_OF_DAY: If after 17:00 and no more events, briefly note.\nd) WEATHER_IMPACT: If rain/storm and user has outdoor/travel event.\n\nSTEP 3 — CHECK TAUGHT RULES:\n- Call memory.rules.match with detected situation\n\nSTEP 4 — ACT OR STOP:\n- If situation detected: store as ephemeral context, notify, route if needed\n- If nothing actionable: respond 'No situations detected.' and stop.",
+      "prompt": "Run a proactive situation check. Do NOT respond unless something actionable is detected.\n\nSTEP 1 — GATHER SIGNALS (call all in parallel):\n- device.calendar.today → today's events\n- device.location.current → where the user is now\n- device.weather.current → current conditions\n- context.read → any active situations already being tracked\n\nSTEP 2 — DETECT SITUATIONS:\nFor each upcoming event, check:\n\na) RUNNING_LATE: If next event starts within 45 minutes:\n   - Call device.commute.estimate(current_location → event_location)\n   - If commute_minutes > minutes_until_event: USER IS LATE\n   - Store as ephemeral context: {type: 'running_late', event, attendees, eta_minutes}\n   - Call sys.handoffToSkill targeting messaging-agent with summary: 'User is running late for [event] at [time] at [location]. Attendees: [names]. Estimated arrival: [ETA]. Draft a brief apology/ETA message to each attendee.'\n\nb) MEETING_STARTING: If event starts in 5-15 minutes:\n   - Store as ephemeral context: {type: 'meeting_starting', event}\n   - Notify user: '[Event] starts in [X] minutes at [location].'\n   - Check memory.rules.match('meeting starting') — if user has a rule like 'enable DND during meetings', call sys.handoffToSkill to notification-triage.\n\nc) END_OF_DAY: If current time is after 17:00 and no more events today:\n   - Briefly note: 'Your day is clear. [X] unread notifications.'\n   - Only mention if there are unread notifications worth surfacing.\n\nd) WEATHER_IMPACT: If rain/storm expected and user has an outdoor or travel event coming up:\n   - Note the weather risk with the relevant event.\n\nSTEP 3 — CHECK TAUGHT RULES:\n- Call memory.rules.match with a description of any detected situation\n- If a taught rule matches, follow its action (it overrides default behavior)\n\nSTEP 4 — ACT OR STOP:\n- If situation detected: store as ephemeral context, notify user, route to worker if action needed\n- If nothing actionable: respond 'No situations detected.' and stop.\n- Do NOT notify about situations that are already stored in active context (avoid duplicates).",
       "concurrency": 1
     }
   ]

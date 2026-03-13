@@ -1,7 +1,7 @@
 {
   "id": "messaging-agent",
   "name": "Messaging Agent",
-  "description": "Users need multi-channel messaging with relationship-aware tone adaptation and proactive channel setup.",
+  "description": "Users need a multi-channel messaging assistant that drafts context-aware, relationship-appropriate messages across SMS, email, and WhatsApp — and proactively connects channels when they're needed but not set up yet.",
   "version": "2.0.0",
   "phase": "DEPLOYED",
   "ui_capable": false,
@@ -12,13 +12,15 @@
     "memory-mcp"
   ],
   "problem": {
-    "statement": "Users need multi-channel messaging with relationship-aware tone adaptation and proactive channel setup.",
-    "context": "Multi-channel communication specialist for SMS, email, and WhatsApp.",
+    "statement": "Users need a multi-channel messaging assistant that drafts context-aware, relationship-appropriate messages across SMS, email, and WhatsApp — and proactively connects channels when they're needed but not set up yet.",
+    "context": "Multi-channel communication specialist. Drafts and sends messages via SMS/iMessage, email (Gmail), and WhatsApp with tone adaptation. Automatically detects when a channel isn't connected and guides the user through setup inline — then continues with the original task seamlessly.",
     "goals": [
-      "Draft relationship-aware messages",
-      "Choose the right channel",
-      "Proactively detect and guide channel setup",
-      "Always confirm before sending"
+      "Draft messages with relationship-aware tone (wife=warm, boss=professional, friend=casual)",
+      "Choose the right channel (SMS, email, WhatsApp) based on context and user request",
+      "Proactively detect when a needed channel isn't connected — guide setup inline, then continue",
+      "Check contact details and relationship before composing",
+      "Consider current context — time, location, calendar — for relevant messages",
+      "Always confirm with user before sending"
     ]
   },
   "tools": [
@@ -26,7 +28,7 @@
       "id": "tool-msg-contacts-search",
       "id_status": "permanent",
       "name": "device.contacts.search",
-      "description": "Search contacts.",
+      "description": "Search contacts by name, relationship, or keyword.",
       "inputs": [
         {
           "name": "query",
@@ -77,7 +79,7 @@
       "id": "tool-msg-contacts-get",
       "id_status": "permanent",
       "name": "device.contacts.get",
-      "description": "Get contact details.",
+      "description": "Get full contact details by name or ID — relationship, phone, notes.",
       "inputs": [
         {
           "name": "contact_id",
@@ -123,7 +125,7 @@
       "id": "tool-msg-send",
       "id_status": "permanent",
       "name": "device.message.send",
-      "description": "Send SMS/iMessage. Always confirm first.",
+      "description": "Send SMS/iMessage to a contact. Always confirm with user before calling this.",
       "inputs": [
         {
           "name": "contact_name",
@@ -176,7 +178,7 @@
       "id": "tool-msg-cal-today",
       "id_status": "permanent",
       "name": "device.calendar.today",
-      "description": "Get today's events for context.",
+      "description": "Get today's calendar events — useful for context-aware messages (e.g., 'running late from dentist').",
       "inputs": [],
       "output": {
         "type": "object",
@@ -213,7 +215,7 @@
       "id": "tool-msg-location",
       "id_status": "permanent",
       "name": "device.location.current",
-      "description": "Get current location.",
+      "description": "Get current location — useful for 'on my way' type messages.",
       "inputs": [],
       "output": {
         "type": "object",
@@ -250,7 +252,7 @@
       "id": "tool-msg-weather",
       "id_status": "permanent",
       "name": "device.weather.current",
-      "description": "Get current weather.",
+      "description": "Get current weather — useful for weather-related message context.",
       "inputs": [],
       "output": {
         "type": "object",
@@ -287,7 +289,7 @@
       "id": "tool-msg-recall",
       "id_status": "permanent",
       "name": "memory.recall",
-      "description": "Check communication preferences.",
+      "description": "Check user preferences for communication style, contact-specific instructions, and messaging rules.",
       "inputs": [
         {
           "name": "query",
@@ -299,7 +301,7 @@
           "name": "type",
           "type": "string",
           "required": false,
-          "description": "Filter"
+          "description": "Filter: preference, fact, instruction"
         },
         {
           "name": "limit",
@@ -345,13 +347,13 @@
       "id": "tool-msg-ctx-read",
       "id_status": "permanent",
       "name": "context.read",
-      "description": "Read active situations.",
+      "description": "Read active ephemeral context — current situations that might affect message content or urgency.",
       "inputs": [
         {
           "name": "type",
           "type": "string",
           "required": false,
-          "description": "Filter"
+          "description": "Filter: situation or plan"
         },
         {
           "name": "limit",
@@ -362,7 +364,7 @@
       ],
       "output": {
         "type": "object",
-        "description": "Active context"
+        "description": "Active context entries"
       },
       "source": {
         "type": "mcp_bridge",
@@ -395,18 +397,18 @@
       "id": "tool-msg-integrations-check",
       "id_status": "permanent",
       "name": "integrations.check",
-      "description": "Check channel connection.",
+      "description": "Check if a specific channel (email, whatsapp) is connected. Returns status/setup tool names.",
       "inputs": [
         {
           "name": "channel",
           "type": "string",
           "required": true,
-          "description": "Channel ID"
+          "description": "Channel ID — 'email' or 'whatsapp'"
         }
       ],
       "output": {
         "type": "object",
-        "description": "Integration details"
+        "description": "Integration details and next steps"
       },
       "source": {
         "type": "mcp_bridge",
@@ -441,11 +443,11 @@
       "id": "tool-msg-email-status",
       "id_status": "permanent",
       "name": "email.status",
-      "description": "Check Gmail connection.",
+      "description": "Check if Gmail is connected.",
       "inputs": [],
       "output": {
         "type": "object",
-        "description": "Status"
+        "description": "Connection status"
       },
       "source": {
         "type": "mcp_bridge",
@@ -478,7 +480,7 @@
       "id": "tool-msg-email-setup",
       "id_status": "permanent",
       "name": "email.setup",
-      "description": "Get Gmail sign-in link.",
+      "description": "Get the Gmail sign-in link to connect the user's account. Show the link to the user.",
       "inputs": [],
       "output": {
         "type": "object",
@@ -515,25 +517,25 @@
       "id": "tool-msg-email-send",
       "id_status": "permanent",
       "name": "email.send",
-      "description": "Send email via Gmail.",
+      "description": "Send a new email via Gmail. Always confirm with user before calling.",
       "inputs": [
         {
           "name": "to",
           "type": "string",
           "required": true,
-          "description": "Recipient email"
+          "description": "Recipient email address"
         },
         {
           "name": "subject",
           "type": "string",
           "required": true,
-          "description": "Subject"
+          "description": "Email subject"
         },
         {
           "name": "body",
           "type": "string",
           "required": true,
-          "description": "Body"
+          "description": "Email body text"
         }
       ],
       "output": {
@@ -575,19 +577,19 @@
       "id": "tool-msg-email-reply",
       "id_status": "permanent",
       "name": "email.reply",
-      "description": "Reply to email.",
+      "description": "Reply to an existing email. Keeps the thread together. Always confirm with user before calling.",
       "inputs": [
         {
           "name": "email_id",
           "type": "string",
           "required": true,
-          "description": "Email ID"
+          "description": "Email ID to reply to"
         },
         {
           "name": "body",
           "type": "string",
           "required": true,
-          "description": "Reply body"
+          "description": "Reply body text"
         }
       ],
       "output": {
@@ -628,13 +630,13 @@
       "id": "tool-msg-email-unread",
       "id_status": "permanent",
       "name": "email.unread",
-      "description": "Get unread emails.",
+      "description": "Get unread emails from Gmail inbox.",
       "inputs": [
         {
           "name": "limit",
           "type": "number",
           "required": false,
-          "description": "Max emails"
+          "description": "Max emails (default 10)"
         }
       ],
       "output": {
@@ -672,11 +674,11 @@
       "id": "tool-msg-whatsapp-status",
       "id_status": "permanent",
       "name": "whatsapp.status",
-      "description": "Check WhatsApp status.",
+      "description": "Check WhatsApp connection status.",
       "inputs": [],
       "output": {
         "type": "object",
-        "description": "Status"
+        "description": "Connection status"
       },
       "source": {
         "type": "mcp_bridge",
@@ -709,13 +711,13 @@
       "id": "tool-msg-whatsapp-send",
       "id_status": "permanent",
       "name": "whatsapp.send",
-      "description": "Send WhatsApp message.",
+      "description": "Send a WhatsApp message. Always confirm with user before calling.",
       "inputs": [
         {
           "name": "to",
           "type": "string",
           "required": true,
-          "description": "Phone or contact name"
+          "description": "Phone number or contact name"
         },
         {
           "name": "message",
@@ -762,13 +764,13 @@
       "id": "tool-msg-whatsapp-unread",
       "id_status": "permanent",
       "name": "whatsapp.unread",
-      "description": "Get unread WhatsApp.",
+      "description": "Get unread WhatsApp messages.",
       "inputs": [
         {
           "name": "limit",
           "type": "number",
           "required": false,
-          "description": "Max messages"
+          "description": "Max messages (default 20)"
         }
       ],
       "output": {
@@ -807,12 +809,12 @@
     "supported": [
       {
         "id": "search_contact",
-        "description": "Search contacts.",
+        "description": "Search contacts by name, relationship, or keyword.",
         "examples": [
-          "Search contacts.",
-          "I need to search contacts.",
-          "Can you search contacts.?",
-          "Please search contacts."
+          "Search contacts by name, relationship, or keyword.",
+          "I need to search contacts by name, relationship, or keyword.",
+          "Can you search contacts by name, relationship, or keyword.?",
+          "Please search contacts by name, relationship, or keyword."
         ],
         "maps_to_workflow": "search_contact_flow",
         "entities": [
@@ -826,12 +828,12 @@
       },
       {
         "id": "get_contact",
-        "description": "Get contact details.",
+        "description": "Get full contact details by name or ID — relationship, phone, notes.",
         "examples": [
-          "Get contact details.",
-          "I need to get contact details.",
-          "Can you get contact details.?",
-          "Please get contact details."
+          "Get full contact details by name or ID — relationship, phone, notes.",
+          "I need to get full contact details by name or ID — relationship, phone, notes.",
+          "Can you get full contact details by name or ID — relationship, phone, notes.?",
+          "Please get full contact details by name or ID — relationship, phone, notes."
         ],
         "maps_to_workflow": "get_contact_flow",
         "entities": [
@@ -845,12 +847,12 @@
       },
       {
         "id": "send_message",
-        "description": "Send SMS/iMessage. Always confirm first.",
+        "description": "Send SMS/iMessage to a contact. Always confirm with user before calling this.",
         "examples": [
-          "Send SMS/iMessage. Always confirm first.",
-          "I need to send SMS/iMessage. Always confirm first.",
-          "Can you send SMS/iMessage. Always confirm first.?",
-          "Please send SMS/iMessage. Always confirm first."
+          "Send SMS/iMessage to a contact. Always confirm with user before calling this.",
+          "I need to send SMS/iMessage to a contact. Always confirm with user before calling this.",
+          "Can you send SMS/iMessage to a contact. Always confirm with user before calling this.?",
+          "Please send SMS/iMessage to a contact. Always confirm with user before calling this."
         ],
         "maps_to_workflow": "send_message_flow",
         "entities": [
@@ -870,45 +872,45 @@
       },
       {
         "id": "today_calendar",
-        "description": "Get today's events for context.",
+        "description": "Get today's calendar events — useful for context-aware messages (e.g., 'running late from dentist').",
         "examples": [
-          "Get today's events for context.",
-          "I need to get today's events for context.",
-          "Can you get today's events for context.?",
-          "Please get today's events for context."
+          "Get today's calendar events — useful for context-aware messages (e.g., 'running late from dentist').",
+          "I need to get today's calendar events — useful for context-aware messages (e.g., 'running late from dentist').",
+          "Can you get today's calendar events — useful for context-aware messages (e.g., 'running late from dentist').?",
+          "Please get today's calendar events — useful for context-aware messages (e.g., 'running late from dentist')."
         ],
         "maps_to_workflow": "today_calendar_flow"
       },
       {
         "id": "current_location",
-        "description": "Get current location.",
+        "description": "Get current location — useful for 'on my way' type messages.",
         "examples": [
-          "Get current location.",
-          "I need to get current location.",
-          "Can you get current location.?",
-          "Please get current location."
+          "Get current location — useful for 'on my way' type messages.",
+          "I need to get current location — useful for 'on my way' type messages.",
+          "Can you get current location — useful for 'on my way' type messages.?",
+          "Please get current location — useful for 'on my way' type messages."
         ],
         "maps_to_workflow": "current_location_flow"
       },
       {
         "id": "current_weather",
-        "description": "Get current weather.",
+        "description": "Get current weather — useful for weather-related message context.",
         "examples": [
-          "Get current weather.",
-          "I need to get current weather.",
-          "Can you get current weather.?",
-          "Please get current weather."
+          "Get current weather — useful for weather-related message context.",
+          "I need to get current weather — useful for weather-related message context.",
+          "Can you get current weather — useful for weather-related message context.?",
+          "Please get current weather — useful for weather-related message context."
         ],
         "maps_to_workflow": "current_weather_flow"
       },
       {
         "id": "recall",
-        "description": "Check communication preferences.",
+        "description": "Check user preferences for communication style, contact-specific instructions, and messaging rules.",
         "examples": [
-          "Check communication preferences.",
-          "I need to check communication preferences.",
-          "Can you check communication preferences.?",
-          "Please check communication preferences."
+          "Check user preferences for communication style, contact-specific instructions, and messaging rules.",
+          "I need to check user preferences for communication style, contact-specific instructions, and messaging rules.",
+          "Can you check user preferences for communication style, contact-specific instructions, and messaging rules.?",
+          "Please check user preferences for communication style, contact-specific instructions, and messaging rules."
         ],
         "maps_to_workflow": "recall_flow",
         "entities": [
@@ -922,23 +924,23 @@
       },
       {
         "id": "read",
-        "description": "Read active situations.",
+        "description": "Read active ephemeral context — current situations that might affect message content or urgency.",
         "examples": [
-          "Read active situations.",
-          "I need to read active situations.",
-          "Can you read active situations.?",
-          "Please read active situations."
+          "Read active ephemeral context — current situations that might affect message content or urgency.",
+          "I need to read active ephemeral context — current situations that might affect message content or urgency.",
+          "Can you read active ephemeral context — current situations that might affect message content or urgency.?",
+          "Please read active ephemeral context — current situations that might affect message content or urgency."
         ],
         "maps_to_workflow": "read_flow"
       },
       {
         "id": "check",
-        "description": "Check channel connection.",
+        "description": "Check if a specific channel (email, whatsapp) is connected. Returns status/setup tool names.",
         "examples": [
-          "Check channel connection.",
-          "I need to check channel connection.",
-          "Can you check channel connection.?",
-          "Please check channel connection."
+          "Check if a specific channel (email, whatsapp) is connected. Returns status/setup tool names.",
+          "I need to check if a specific channel (email, whatsapp) is connected. Returns status/setup tool names.",
+          "Can you check if a specific channel (email, whatsapp) is connected. Returns status/setup tool names.?",
+          "Please check if a specific channel (email, whatsapp) is connected. Returns status/setup tool names."
         ],
         "maps_to_workflow": "check_flow",
         "entities": [
@@ -952,34 +954,34 @@
       },
       {
         "id": "status",
-        "description": "Check Gmail connection.",
+        "description": "Check if Gmail is connected.",
         "examples": [
-          "Check Gmail connection.",
-          "I need to check Gmail connection.",
-          "Can you check Gmail connection.?",
-          "Please check Gmail connection."
+          "Check if Gmail is connected.",
+          "I need to check if Gmail is connected.",
+          "Can you check if Gmail is connected.?",
+          "Please check if Gmail is connected."
         ],
         "maps_to_workflow": "status_flow"
       },
       {
         "id": "setup",
-        "description": "Get Gmail sign-in link.",
+        "description": "Get the Gmail sign-in link to connect the user's account. Show the link to the user.",
         "examples": [
-          "Get Gmail sign-in link.",
-          "I need to get Gmail sign-in link.",
-          "Can you get Gmail sign-in link.?",
-          "Please get Gmail sign-in link."
+          "Get the Gmail sign-in link to connect the user's account. Show the link to the user.",
+          "I need to get the Gmail sign-in link to connect the user's account. Show the link to the user.",
+          "Can you get the Gmail sign-in link to connect the user's account. Show the link to the user.?",
+          "Please get the Gmail sign-in link to connect the user's account. Show the link to the user."
         ],
         "maps_to_workflow": "setup_flow"
       },
       {
         "id": "send",
-        "description": "Send email via Gmail.",
+        "description": "Send a new email via Gmail. Always confirm with user before calling.",
         "examples": [
-          "Send email via Gmail.",
-          "I need to send email via Gmail.",
-          "Can you send email via Gmail.?",
-          "Please send email via Gmail."
+          "Send a new email via Gmail. Always confirm with user before calling.",
+          "I need to send a new email via Gmail. Always confirm with user before calling.",
+          "Can you send a new email via Gmail. Always confirm with user before calling.?",
+          "Please send a new email via Gmail. Always confirm with user before calling."
         ],
         "maps_to_workflow": "send_flow",
         "entities": [
@@ -1005,12 +1007,12 @@
       },
       {
         "id": "reply",
-        "description": "Reply to email.",
+        "description": "Reply to an existing email. Keeps the thread together. Always confirm with user before calling.",
         "examples": [
-          "Reply to email.",
-          "I need to reply to email.",
-          "Can you reply to email.?",
-          "Please reply to email."
+          "Reply to an existing email. Keeps the thread together. Always confirm with user before calling.",
+          "I need to reply to an existing email. Keeps the thread together. Always confirm with user before calling.",
+          "Can you reply to an existing email. Keeps the thread together. Always confirm with user before calling.?",
+          "Please reply to an existing email. Keeps the thread together. Always confirm with user before calling."
         ],
         "maps_to_workflow": "reply_flow",
         "entities": [
@@ -1030,34 +1032,34 @@
       },
       {
         "id": "unread",
-        "description": "Get unread emails.",
+        "description": "Get unread emails from Gmail inbox.",
         "examples": [
-          "Get unread emails.",
-          "I need to get unread emails.",
-          "Can you get unread emails.?",
-          "Please get unread emails."
+          "Get unread emails from Gmail inbox.",
+          "I need to get unread emails from Gmail inbox.",
+          "Can you get unread emails from Gmail inbox.?",
+          "Please get unread emails from Gmail inbox."
         ],
         "maps_to_workflow": "unread_flow"
       },
       {
         "id": "status",
-        "description": "Check WhatsApp status.",
+        "description": "Check WhatsApp connection status.",
         "examples": [
-          "Check WhatsApp status.",
-          "I need to check WhatsApp status.",
-          "Can you check WhatsApp status.?",
-          "Please check WhatsApp status."
+          "Check WhatsApp connection status.",
+          "I need to check WhatsApp connection status.",
+          "Can you check WhatsApp connection status.?",
+          "Please check WhatsApp connection status."
         ],
         "maps_to_workflow": "status_flow"
       },
       {
         "id": "send",
-        "description": "Send WhatsApp message.",
+        "description": "Send a WhatsApp message. Always confirm with user before calling.",
         "examples": [
-          "Send WhatsApp message.",
-          "I need to send WhatsApp message.",
-          "Can you send WhatsApp message.?",
-          "Please send WhatsApp message."
+          "Send a WhatsApp message. Always confirm with user before calling.",
+          "I need to send a WhatsApp message. Always confirm with user before calling.",
+          "Can you send a WhatsApp message. Always confirm with user before calling.?",
+          "Please send a WhatsApp message. Always confirm with user before calling."
         ],
         "maps_to_workflow": "send_flow",
         "entities": [
@@ -1077,12 +1079,12 @@
       },
       {
         "id": "unread",
-        "description": "Get unread WhatsApp.",
+        "description": "Get unread WhatsApp messages.",
         "examples": [
-          "Get unread WhatsApp.",
-          "I need to get unread WhatsApp.",
-          "Can you get unread WhatsApp.?",
-          "Please get unread WhatsApp."
+          "Get unread WhatsApp messages.",
+          "I need to get unread WhatsApp messages.",
+          "Can you get unread WhatsApp messages.?",
+          "Please get unread WhatsApp messages."
         ],
         "maps_to_workflow": "unread_flow"
       }
@@ -1106,7 +1108,7 @@
     "workflows": [
       {
         "id": "search_contact_flow",
-        "name": "Search contacts.",
+        "name": "Search contacts by name, relationship, or keyword.",
         "description": "Auto-generated workflow for search_contact",
         "trigger": "search_contact",
         "steps": [
@@ -1117,7 +1119,7 @@
       },
       {
         "id": "get_contact_flow",
-        "name": "Get contact details.",
+        "name": "Get full contact details by name or ID — relationship, phone, notes.",
         "description": "Auto-generated workflow for get_contact",
         "trigger": "get_contact",
         "steps": [
@@ -1128,7 +1130,7 @@
       },
       {
         "id": "send_message_flow",
-        "name": "Send SMS/iMessage. Always confirm first.",
+        "name": "Send SMS/iMessage to a contact. Always confirm with user before calling this.",
         "description": "Auto-generated workflow for send_message",
         "trigger": "send_message",
         "steps": [
@@ -1139,7 +1141,7 @@
       },
       {
         "id": "today_calendar_flow",
-        "name": "Get today's events for context.",
+        "name": "Get today's calendar events — useful for context-aware messages (e.g., 'running late from dentist').",
         "description": "Auto-generated workflow for today_calendar",
         "trigger": "today_calendar",
         "steps": [
@@ -1150,7 +1152,7 @@
       },
       {
         "id": "current_location_flow",
-        "name": "Get current location.",
+        "name": "Get current location — useful for 'on my way' type messages.",
         "description": "Auto-generated workflow for current_location",
         "trigger": "current_location",
         "steps": [
@@ -1161,7 +1163,7 @@
       },
       {
         "id": "current_weather_flow",
-        "name": "Get current weather.",
+        "name": "Get current weather — useful for weather-related message context.",
         "description": "Auto-generated workflow for current_weather",
         "trigger": "current_weather",
         "steps": [
@@ -1172,7 +1174,7 @@
       },
       {
         "id": "recall_flow",
-        "name": "Check communication preferences.",
+        "name": "Check user preferences for communication style, contact-specific instructions, and messaging rules.",
         "description": "Auto-generated workflow for recall",
         "trigger": "recall",
         "steps": [
@@ -1183,7 +1185,7 @@
       },
       {
         "id": "read_flow",
-        "name": "Read active situations.",
+        "name": "Read active ephemeral context — current situations that might affect message content or urgency.",
         "description": "Auto-generated workflow for read",
         "trigger": "read",
         "steps": [
@@ -1194,7 +1196,7 @@
       },
       {
         "id": "check_flow",
-        "name": "Check channel connection.",
+        "name": "Check if a specific channel (email, whatsapp) is connected. Returns status/setup tool names.",
         "description": "Auto-generated workflow for check",
         "trigger": "check",
         "steps": [
@@ -1205,7 +1207,7 @@
       },
       {
         "id": "status_flow",
-        "name": "Check Gmail connection.",
+        "name": "Check if Gmail is connected.",
         "description": "Auto-generated workflow for status",
         "trigger": "status",
         "steps": [
@@ -1216,7 +1218,7 @@
       },
       {
         "id": "setup_flow",
-        "name": "Get Gmail sign-in link.",
+        "name": "Get the Gmail sign-in link to connect the user's account. Show the link to the user.",
         "description": "Auto-generated workflow for setup",
         "trigger": "setup",
         "steps": [
@@ -1227,7 +1229,7 @@
       },
       {
         "id": "send_flow",
-        "name": "Send email via Gmail.",
+        "name": "Send a new email via Gmail. Always confirm with user before calling.",
         "description": "Auto-generated workflow for send",
         "trigger": "send",
         "steps": [
@@ -1238,7 +1240,7 @@
       },
       {
         "id": "reply_flow",
-        "name": "Reply to email.",
+        "name": "Reply to an existing email. Keeps the thread together. Always confirm with user before calling.",
         "description": "Auto-generated workflow for reply",
         "trigger": "reply",
         "steps": [
@@ -1249,7 +1251,7 @@
       },
       {
         "id": "unread_flow",
-        "name": "Get unread emails.",
+        "name": "Get unread emails from Gmail inbox.",
         "description": "Auto-generated workflow for unread",
         "trigger": "unread",
         "steps": [
@@ -1260,7 +1262,7 @@
       },
       {
         "id": "status_flow",
-        "name": "Check WhatsApp status.",
+        "name": "Check WhatsApp connection status.",
         "description": "Auto-generated workflow for status",
         "trigger": "status",
         "steps": [
@@ -1271,7 +1273,7 @@
       },
       {
         "id": "send_flow",
-        "name": "Send WhatsApp message.",
+        "name": "Send a WhatsApp message. Always confirm with user before calling.",
         "description": "Auto-generated workflow for send",
         "trigger": "send",
         "steps": [
@@ -1282,7 +1284,7 @@
       },
       {
         "id": "unread_flow",
-        "name": "Get unread WhatsApp.",
+        "name": "Get unread WhatsApp messages.",
         "description": "Auto-generated workflow for unread",
         "trigger": "unread",
         "steps": [
@@ -1301,187 +1303,187 @@
   "scenarios": [
     {
       "id": "search_contact",
-      "title": "Search contacts.",
+      "title": "Search contacts by name, relationship, or keyword.",
       "description": "Test scenario for search contact",
       "steps": [
-        "User says: \"Search contacts.\"",
-        "Agent calls device.contacts.search — search contacts.",
+        "User says: \"Search contacts by name, relationship, or keyword.\"",
+        "Agent calls device.contacts.search — search contacts by name, relationship, or keyword.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for search contact is handled successfully."
     },
     {
       "id": "get_contact",
-      "title": "Get contact details.",
+      "title": "Get full contact details by name or ID — relationship, phone, notes.",
       "description": "Test scenario for get contact",
       "steps": [
-        "User says: \"Get contact details.\"",
-        "Agent calls device.contacts.get — get contact details.",
+        "User says: \"Get full contact details by name or ID — relationship, phone, notes.\"",
+        "Agent calls device.contacts.get — get full contact details by name or id — relationship, phone, notes.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for get contact is handled successfully."
     },
     {
       "id": "send_message",
-      "title": "Send SMS/iMessage. Always confirm first.",
+      "title": "Send SMS/iMessage to a contact. Always confirm with user before calling this.",
       "description": "Test scenario for send message",
       "steps": [
-        "User says: \"Send SMS/iMessage. Always confirm first.\"",
-        "Agent calls device.message.send — send sms/imessage. always confirm first.",
+        "User says: \"Send SMS/iMessage to a contact. Always confirm with user before calling this.\"",
+        "Agent calls device.message.send — send sms/imessage to a contact. always confirm with user before calling this.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for send message is handled successfully."
     },
     {
       "id": "today_calendar",
-      "title": "Get today's events for context.",
+      "title": "Get today's calendar events — useful for context-aware messages (e.g., 'running late from dentist').",
       "description": "Test scenario for today calendar",
       "steps": [
-        "User says: \"Get today's events for context.\"",
-        "Agent calls device.calendar.today — get today's events for context.",
+        "User says: \"Get today's calendar events — useful for context-aware messages (e.g., 'running late from dentist').\"",
+        "Agent calls device.calendar.today — get today's calendar events — useful for context-aware messages (e.g., 'running late from dentist').",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for today calendar is handled successfully."
     },
     {
       "id": "current_location",
-      "title": "Get current location.",
+      "title": "Get current location — useful for 'on my way' type messages.",
       "description": "Test scenario for current location",
       "steps": [
-        "User says: \"Get current location.\"",
-        "Agent calls device.location.current — get current location.",
+        "User says: \"Get current location — useful for 'on my way' type messages.\"",
+        "Agent calls device.location.current — get current location — useful for 'on my way' type messages.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for current location is handled successfully."
     },
     {
       "id": "current_weather",
-      "title": "Get current weather.",
+      "title": "Get current weather — useful for weather-related message context.",
       "description": "Test scenario for current weather",
       "steps": [
-        "User says: \"Get current weather.\"",
-        "Agent calls device.weather.current — get current weather.",
+        "User says: \"Get current weather — useful for weather-related message context.\"",
+        "Agent calls device.weather.current — get current weather — useful for weather-related message context.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for current weather is handled successfully."
     },
     {
       "id": "recall",
-      "title": "Check communication preferences.",
+      "title": "Check user preferences for communication style, contact-specific instructions, and messaging rules.",
       "description": "Test scenario for recall",
       "steps": [
-        "User says: \"Check communication preferences.\"",
-        "Agent calls memory.recall — check communication preferences.",
+        "User says: \"Check user preferences for communication style, contact-specific instructions, and messaging rules.\"",
+        "Agent calls memory.recall — check user preferences for communication style, contact-specific instructions, and messaging rules.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for recall is handled successfully."
     },
     {
       "id": "read",
-      "title": "Read active situations.",
+      "title": "Read active ephemeral context — current situations that might affect message content or urgency.",
       "description": "Test scenario for read",
       "steps": [
-        "User says: \"Read active situations.\"",
-        "Agent calls context.read — read active situations.",
+        "User says: \"Read active ephemeral context — current situations that might affect message content or urgency.\"",
+        "Agent calls context.read — read active ephemeral context — current situations that might affect message content or urgency.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for read is handled successfully."
     },
     {
       "id": "check",
-      "title": "Check channel connection.",
+      "title": "Check if a specific channel (email, whatsapp) is connected. Returns status/setup tool names.",
       "description": "Test scenario for check",
       "steps": [
-        "User says: \"Check channel connection.\"",
-        "Agent calls integrations.check — check channel connection.",
+        "User says: \"Check if a specific channel (email, whatsapp) is connected. Returns status/setup tool names.\"",
+        "Agent calls integrations.check — check if a specific channel (email, whatsapp) is connected. returns status/setup tool names.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for check is handled successfully."
     },
     {
       "id": "status",
-      "title": "Check Gmail connection.",
+      "title": "Check if Gmail is connected.",
       "description": "Test scenario for status",
       "steps": [
-        "User says: \"Check Gmail connection.\"",
-        "Agent calls email.status — check gmail connection.",
+        "User says: \"Check if Gmail is connected.\"",
+        "Agent calls email.status — check if gmail is connected.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for status is handled successfully."
     },
     {
       "id": "setup",
-      "title": "Get Gmail sign-in link.",
+      "title": "Get the Gmail sign-in link to connect the user's account. Show the link to the user.",
       "description": "Test scenario for setup",
       "steps": [
-        "User says: \"Get Gmail sign-in link.\"",
-        "Agent calls email.setup — get gmail sign-in link.",
+        "User says: \"Get the Gmail sign-in link to connect the user's account. Show the link to the user.\"",
+        "Agent calls email.setup — get the gmail sign-in link to connect the user's account. show the link to the user.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for setup is handled successfully."
     },
     {
       "id": "send",
-      "title": "Send email via Gmail.",
+      "title": "Send a new email via Gmail. Always confirm with user before calling.",
       "description": "Test scenario for send",
       "steps": [
-        "User says: \"Send email via Gmail.\"",
-        "Agent calls email.send — send email via gmail.",
+        "User says: \"Send a new email via Gmail. Always confirm with user before calling.\"",
+        "Agent calls email.send — send a new email via gmail. always confirm with user before calling.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for send is handled successfully."
     },
     {
       "id": "reply",
-      "title": "Reply to email.",
+      "title": "Reply to an existing email. Keeps the thread together. Always confirm with user before calling.",
       "description": "Test scenario for reply",
       "steps": [
-        "User says: \"Reply to email.\"",
-        "Agent calls email.reply — reply to email.",
+        "User says: \"Reply to an existing email. Keeps the thread together. Always confirm with user before calling.\"",
+        "Agent calls email.reply — reply to an existing email. keeps the thread together. always confirm with user before calling.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for reply is handled successfully."
     },
     {
       "id": "unread",
-      "title": "Get unread emails.",
+      "title": "Get unread emails from Gmail inbox.",
       "description": "Test scenario for unread",
       "steps": [
-        "User says: \"Get unread emails.\"",
-        "Agent calls email.unread — get unread emails.",
+        "User says: \"Get unread emails from Gmail inbox.\"",
+        "Agent calls email.unread — get unread emails from gmail inbox.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for unread is handled successfully."
     },
     {
       "id": "status",
-      "title": "Check WhatsApp status.",
+      "title": "Check WhatsApp connection status.",
       "description": "Test scenario for status",
       "steps": [
-        "User says: \"Check WhatsApp status.\"",
-        "Agent calls email.status — check gmail connection.",
+        "User says: \"Check WhatsApp connection status.\"",
+        "Agent calls email.status — check if gmail is connected.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for status is handled successfully."
     },
     {
       "id": "send",
-      "title": "Send WhatsApp message.",
+      "title": "Send a WhatsApp message. Always confirm with user before calling.",
       "description": "Test scenario for send",
       "steps": [
-        "User says: \"Send WhatsApp message.\"",
-        "Agent calls email.send — send email via gmail.",
+        "User says: \"Send a WhatsApp message. Always confirm with user before calling.\"",
+        "Agent calls email.send — send a new email via gmail. always confirm with user before calling.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for send is handled successfully."
     },
     {
       "id": "unread",
-      "title": "Get unread WhatsApp.",
+      "title": "Get unread WhatsApp messages.",
       "description": "Test scenario for unread",
       "steps": [
-        "User says: \"Get unread WhatsApp.\"",
-        "Agent calls email.unread — get unread emails.",
+        "User says: \"Get unread WhatsApp messages.\"",
+        "Agent calls email.unread — get unread emails from gmail inbox.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for unread is handled successfully."
@@ -1489,17 +1491,18 @@
   ],
   "role": {
     "name": "Communication Specialist",
-    "persona": "You are a multi-channel communication specialist. You handle SMS, email, and WhatsApp.\n\nBefore using any external channel, call integrations.check. If not connected, guide setup inline.\n\nChannel selection: text/message/tell → SMS, email → Email, WhatsApp → WhatsApp.\n\nCheck handoff summary for preferences and rules from orchestrator. Follow them.\n\nDraft messages with relationship-appropriate tone. Always confirm before sending.",
+    "persona": "You are a multi-channel communication specialist who drafts messages that sound like the user — not like a robot. You handle SMS, email, and WhatsApp.\n\n═══════════════════════════════════════════\nCHANNEL SETUP (THE MAGIC SENTENCE)\n═══════════════════════════════════════════\nBefore using any external channel (email, WhatsApp), call integrations.check for that channel. If not connected, call the channel's setup tool and guide the user through setup. Then continue with your original task.\n\nExample flow:\n1. User wants to email David → call integrations.check('email')\n2. Get status_tool name → call email.status → not connected\n3. Call email.setup → get Google sign-in link\n4. Tell user: 'Before I can send that email, let me help you connect Gmail. Click here: [link]'\n5. User authorizes, comes back\n6. Call email.status → connected! Continue drafting the email.\n\nThis works the same for ANY channel. If WhatsApp isn't connected, check whatsapp.status and guide accordingly.\nNever fail with 'channel not connected' — always guide setup proactively.\n\n═══════════════════════════════════════════\nCHANNEL SELECTION\n═══════════════════════════════════════════\nChoose the right channel based on the user's request and context:\n- User says 'text/message/tell' → SMS (device.message.send)\n- User says 'email' → Email (email.send)\n- User says 'WhatsApp' → WhatsApp (whatsapp.send)\n- User says 'reply to [email]' → Email (email.reply)\n- Ambiguous ('let David know') → Default to SMS. If user has a preference (from handoff), follow it.\n\n═══════════════════════════════════════════\nCONTEXT FROM ORCHESTRATOR\n═══════════════════════════════════════════\nThe orchestrator has ALREADY searched memory for preferences and rules about this contact. Check the handoff summary — it contains any relevant preferences, rules, and contact info. Follow them.\n\nPRIORITY ORDER (highest to lowest):\n1. Instructions from handoff summary — the orchestrator found these in memory. ALWAYS follow them.\n2. Contact relationship from handoff or from device.contacts lookup\n3. Default tone rules below — ONLY when the handoff has no specific instructions\n\nWHEN YOU RECEIVE A MESSAGING REQUEST:\n1. Read the handoff summary for contact info, preferences, and rules\n2. Determine which CHANNEL to use (SMS, email, WhatsApp)\n3. Check if the channel is connected (call integrations.check → status_tool). If not → guide setup inline.\n4. If contact details are missing, look up the contact (device.contacts.search)\n5. Check current context (context.read) for active situations that might affect the message\n6. Optionally check calendar/location/weather if relevant to the message content\n7. Draft the message following any preferences/rules from the handoff\n\nDEFAULT TONE RULES (used ONLY when handoff has no specific instructions):\n- Wife/Partner (Sarah): Warm, intimate, casual. Short and sweet.\n- Boss (Mark): Professional but not stiff. Clear, direct, respectful.\n- Mother (Mom/Dorothy): Warm, loving, slightly more formal than partner.\n- Colleagues (Lisa, etc.): Friendly professional. Collaborative tone.\n- Friends (David, etc.): Casual, relaxed, can use humor.\n- Service contacts (Dr. Smith, etc.): Polite, professional, to the point.\n\nCHANNEL-SPECIFIC TONE:\n- SMS: Short, casual, conversational. Emojis OK for close contacts.\n- Email: Slightly more structured. Subject line matters. Greeting + body + sign-off.\n- WhatsApp: Similar to SMS but can be slightly longer. Media-friendly.\n\nSITUATION-AWARE DRAFTING:\nThe handoff summary may include situation context from the orchestrator's proactive detection:\n- RUNNING_LATE: Handoff will say 'User is running late for [event]. ETA: [time].' → Draft an apology/ETA message. Include the specific ETA. Match tone to the recipient (warm for family, professional for boss). Example for boss: 'Hi Mark, running about 10 minutes late for our 1:1. On my way now.' Example for wife: 'Hey love, running late — should be there by 7:15. Sorry!'\n- MEETING_PREP: Handoff may include meeting context → Draft a prep-related message if needed.\n- GENERAL: Include relevant context (e.g., 'running late from the dentist' if they have a dentist appointment).\n\nMESSAGE DRAFTING:\n- Keep messages natural and conversational\n- If the user says 'tell Sarah I'll be late', add warmth: 'Hey love, running a bit late. Be there soon!'\n- When drafting for multiple recipients (e.g., all meeting attendees), draft separate messages with appropriate tone for each\n- When a preference shaped your draft, briefly mention it: 'Keeping it short per your preference'\n- For email: always include a subject line in your draft\n\nCORRECTION HANDLING:\nWhen the user REJECTS or MODIFIES your draft (e.g., 'too long', 'more casual', 'no emojis'):\n1. Redraft the message according to their feedback\n2. Ask: 'Got it — here is the updated version. Want me to remember this preference for future messages to [contact]?'\n3. If the user says yes, tell them: 'Just say: when messaging [contact], keep it [short/casual/etc.]' — this routes to the teaching system which handles rule storage properly.\n\nALWAYS:\n- Draft the message first and show it to the user\n- Ask for confirmation before sending\n- If unsure about tone or channel, ask the user\n- Never send without explicit approval",
     "goals": [
       "Draft relationship-appropriate messages",
-      "Follow preferences from orchestrator handoff",
-      "Use context for relevant messages",
-      "Confirm before sending"
+      "Follow preferences and rules from the orchestrator's handoff summary",
+      "Use context (calendar, location, time) to enrich messages",
+      "When user corrects a draft, guide them to teach the preference permanently",
+      "Confirm before sending every message"
     ],
     "limitations": [
-      "Cannot send without user confirmation",
-      "Supports SMS, email, WhatsApp",
-      "Cannot read incoming SMS"
+      "Cannot send messages without user confirmation",
+      "Supports SMS, email (Gmail), and WhatsApp — guides setup if a channel isn't connected yet",
+      "Cannot read incoming SMS — only send outgoing. Can read email and WhatsApp."
     ],
     "communication_style": {
       "tone": "warm",

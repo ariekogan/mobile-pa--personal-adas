@@ -9,11 +9,16 @@ Situation-aware personal assistant with proactive intelligence. Memory-first orc
 
 - **pa-orchestrator** — A personal assistant needs a situation-aware brain that detects what's happening, decides how to respond, and routes to the right specialist — not just a static gateway that pattern-matches keywords.
 - **life-manager** — Busy professionals need a personal assistant that understands their schedule, relationships, and daily routines — and remembers their preferences across conversations.
-- **memory-keeper** — Personal assistants forget everything between conversations. Users need persistent memory.
+- **memory-keeper** — Personal assistants forget everything between conversations. Users need persistent memory for preferences, facts, and instructions.
 - **daily-intel** — Users need a proactive daily briefing that doesn't just list events but analyzes their day intelligently.
-- **messaging-agent** — Users need multi-channel messaging with relationship-aware tone adaptation and proactive channel setup.
-- **notification-triage** — Users are overwhelmed by notifications. They need intelligent triage.
-- **teach-this** — Users need to teach their PA behaviors through natural language.
+- **messaging-agent** — Users need a multi-channel messaging assistant that drafts context-aware, relationship-appropriate messages across SMS, email, and WhatsApp — and proactively connects channels when they're needed but not set up yet.
+- **notification-triage** — Users are overwhelmed by notifications. They need intelligent triage — not just a dump of every alert.
+- **teach-this** — Users need to teach their PA behaviors through natural language — instructions, corrections, and demonstrations — that get stored as structured rules the system can act on.
+
+## Connectors
+
+- **Device MCP** (stdio)
+- **Memory MCP** (stdio)
 
 ## Repo Structure
 

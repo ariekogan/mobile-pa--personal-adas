@@ -31,6 +31,13 @@
     }
     .stats .active { color: #22c55e; }
     .stats .inactive { color: #f59e0b; }
+    .live-badge {
+      display: none;
+      font-size: 10px;
+      color: #22c55e;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
 
     /* Rule Card */
     .rule-card {
@@ -135,24 +142,6 @@
     .empty h2 { font-size: 16px; margin-bottom: 8px; color: #8b95a5; }
     .empty p { font-size: 13px; line-height: 1.5; }
 
-    /* Loading */
-    .spinner {
-      display: inline-block;
-      width: 16px;
-      height: 16px;
-      border: 2px solid #2563eb;
-      border-top-color: transparent;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .loading {
-      text-align: center;
-      padding: 48px;
-      color: #6b7a8d;
-    }
-
     /* Confirm Dialog */
     .confirm-overlay {
       position: fixed;
@@ -186,12 +175,19 @@
   </style>
 </head>
 <body>
-  <div id="app">
-    <div class="loading"><span class="spinner"></span> Loading rules...</div>
-  </div>
+  <div id="app"></div>
 
   <script>
-    // ─── MCP Communication Layer ───
+    // ── 1. RENDER IMMEDIATELY with default empty state — works on mobile ──
+    let rules = [];
+    let counts = { total: 0, active: 0, inactive: 0 };
+    let isLive = false;
+    let pendingDeleteId = null;
+
+    // Render default state IMMEDIATELY — no MCP calls needed
+    render();
+
+    // ── 2. POSTMESSAGE BRIDGE — only works on web, silently fails on mobile ──
     let counter = 0;
     const pendingCalls = new Map();
     let hostConnectorId = "memory-mcp";
@@ -235,7 +231,7 @@
 
       if (msg?.type === "init") {
         hostConnectorId = msg.payload?.connectorId || "memory-mcp";
-        loadPanel();
+        tryLiveData();
       }
 
       if (msg?.type === "mcp-result") {
@@ -249,12 +245,8 @@
       }
     });
 
-    // ─── State ───
-    let rules = [];
-    let counts = { total: 0, active: 0, inactive: 0 };
-
-    // ─── Data Loading ───
-    async function loadPanel() {
+    // ── 3. SILENTLY try live data — upgrade UI if successful, ignore if not ──
+    async function tryLiveData() {
       try {
         const [listResult, countResult] = await Promise.all([
           mcpCall("memory.list", { type: "rule", limit: 100 }),
@@ -282,26 +274,31 @@
           };
         });
 
+        isLive = true;
         render();
-      } catch (e) {
-        document.getElementById("app").innerHTML =
-          `<div class="empty"><h2>Error</h2><p>${e.message}</p></div>`;
+      } catch {
+        // Silent failure — mobile hits this, web won't. Both are fine.
+        // Default empty state already rendered.
       }
     }
 
-    // ─── Toggle Rule ───
+    // Auto-try if no init message within 2s (standalone or slow host)
+    setTimeout(() => { if (!isLive) tryLiveData(); }, 2000);
+
+    // ── Toggle Rule ──
     async function toggleRule(id) {
       const rule = rules.find(r => r.id === id);
       if (!rule) return;
-
-      const updated = { ...rule.parsed, active: !rule.active };
-      await mcpCall("memory.update", { id, content: JSON.stringify(updated) });
-      await loadPanel();
+      try {
+        const updated = { ...rule.parsed, active: !rule.active };
+        await mcpCall("memory.update", { id, content: JSON.stringify(updated) });
+        await tryLiveData();
+      } catch {
+        // Silent failure on mobile
+      }
     }
 
-    // ─── Delete Rule ───
-    let pendingDeleteId = null;
-
+    // ── Delete Rule ──
     function confirmDelete(id) {
       pendingDeleteId = id;
       render();
@@ -314,19 +311,24 @@
 
     async function doDelete() {
       if (!pendingDeleteId) return;
-      await mcpCall("memory.delete", { id: pendingDeleteId });
-      pendingDeleteId = null;
-      await loadPanel();
+      try {
+        await mcpCall("memory.delete", { id: pendingDeleteId });
+        pendingDeleteId = null;
+        await tryLiveData();
+      } catch {
+        pendingDeleteId = null;
+        render();
+      }
     }
 
-    // ─── Render ───
+    // ── Render ──
     function render() {
       const app = document.getElementById("app");
 
       if (rules.length === 0) {
         app.innerHTML = `
           <div class="header">
-            <h1>Taught Rules</h1>
+            <h1>Taught Rules${isLive ? '<span class="live-badge" style="display:inline">● LIVE</span>' : ''}</h1>
           </div>
           <div class="empty">
             <h2>No rules yet</h2>
@@ -361,7 +363,7 @@
 
       let html = `
         <div class="header">
-          <h1>Taught Rules</h1>
+          <h1>Taught Rules${isLive ? '<span class="live-badge" style="display:inline">● LIVE</span>' : ''}</h1>
           <div class="stats">
             <span class="active">${counts.active || 0} active</span>
             <span class="inactive">${counts.inactive || 0} inactive</span>
@@ -393,9 +395,6 @@
       d.textContent = s || '';
       return d.innerHTML;
     }
-
-    // Auto-load if no init message within 2s (standalone testing)
-    setTimeout(() => { if (rules.length === 0 && !document.querySelector('.rule-card')) loadPanel(); }, 2000);
   </script>
 </body>
 </html>

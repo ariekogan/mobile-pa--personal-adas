@@ -122,7 +122,7 @@
       "id": "orchestrator-to-life-manager",
       "from": "pa-orchestrator",
       "to": "life-manager",
-      "trigger": "User needs general life management: messaging, scheduling, contact lookup, or complex calendar questions.",
+      "trigger": "User needs general life management: messaging ('tell Sarah...', 'send a message to...'), scheduling ('schedule a meeting...', 'create an event...'), contact lookup, or complex calendar questions.",
       "grants_passed": [
         "pa.verified_user"
       ],
@@ -133,7 +133,7 @@
       "id": "orchestrator-to-memory",
       "from": "pa-orchestrator",
       "to": "memory-keeper",
-      "trigger": "User wants to store, recall, update, or delete memories.",
+      "trigger": "User wants to store, recall, update, or delete memories. Triggered by: 'remember...', 'don't ever...', 'I prefer...', 'what did I tell you about...', 'my preferences', 'forget that...'",
       "grants_passed": [
         "pa.verified_user"
       ],
@@ -144,7 +144,7 @@
       "id": "orchestrator-to-intel",
       "from": "pa-orchestrator",
       "to": "daily-intel",
-      "trigger": "User wants a daily briefing or schedule analysis.",
+      "trigger": "User wants a daily briefing or schedule analysis. Triggered by: 'morning briefing', 'how is my day', 'what should I know today', 'daily summary', 'analyze my schedule'",
       "grants_passed": [
         "pa.verified_user"
       ],
@@ -155,7 +155,7 @@
       "id": "orchestrator-to-messaging",
       "from": "pa-orchestrator",
       "to": "messaging-agent",
-      "trigger": "User wants to send a message, text, email, or WhatsApp someone.",
+      "trigger": "User wants to send a message, text, email, or WhatsApp someone. Triggered by: 'tell Sarah...', 'send a message to...', 'text Mom...', 'email Mark...', 'WhatsApp David...', 'message...', 'draft a reply to...'",
       "grants_passed": [
         "pa.verified_user"
       ],
@@ -166,7 +166,7 @@
       "id": "orchestrator-to-notification-triage",
       "from": "pa-orchestrator",
       "to": "notification-triage",
-      "trigger": "User wants to check notifications, see what they missed, or manage DND.",
+      "trigger": "User wants to check notifications, see what they missed, or manage DND. Triggered by: 'check my notifications', 'what did I miss', 'any important messages?', 'turn on DND', 'do not disturb', 'silence notifications'",
       "grants_passed": [
         "pa.verified_user"
       ],
@@ -177,7 +177,7 @@
       "id": "orchestrator-to-teach-this",
       "from": "pa-orchestrator",
       "to": "teach-this",
-      "trigger": "User wants to teach the PA a behavior, create an automation rule, manage existing rules, or correct a previous suggestion.",
+      "trigger": "User wants to teach the PA a behavior, create an automation rule, manage existing rules, or correct a previous suggestion. Triggered by: 'when X do Y', 'teach that', 'next time do this', 'learn this', 'show my rules', 'what rules do I have', 'disable that rule', 'never do that again', 'always do this when...'",
       "grants_passed": [
         "pa.verified_user"
       ],
@@ -188,7 +188,7 @@
   "routing": {
     "voice": {
       "default_skill": "pa-orchestrator",
-      "description": "Voice interactions start at the orchestrator"
+      "description": "Voice interactions start at the orchestrator for situation detection and routing"
     },
     "chat": {
       "default_skill": "pa-orchestrator",
@@ -204,7 +204,7 @@
       "id": "mobile-device-mcp",
       "required": true,
       "ui_capable": true,
-      "description": "Platform device data connector — calendar, contacts, location, messaging, weather, commute, notifications, DND, battery, connectivity, integration registry, schedule UI.",
+      "description": "Platform device data connector — calendar, contacts, location, messaging, weather, commute, notifications, DND, battery, connectivity, integration registry, schedule UI. Reads real device data from cloud relay (pushed by ateam-mobile's device-bridge).",
       "used_by": [
         "pa-orchestrator",
         "life-manager",
@@ -219,7 +219,7 @@
       "id": "memory-mcp",
       "required": true,
       "ui_capable": true,
-      "description": "Dual-store + rule engine — long-term memory + ephemeral context + rule matching + teach panel UI",
+      "description": "Dual-store + rule engine — long-term memory (preferences, facts, rules) + ephemeral context (situations, plans) + rule matching + teach panel UI",
       "used_by": [
         "pa-orchestrator",
         "life-manager",
@@ -233,7 +233,7 @@
     {
       "id": "email-mcp",
       "required": false,
-      "description": "Gmail connector — OAuth2 setup via chat, read/send/reply/search emails.",
+      "description": "Gmail connector — OAuth2 setup via chat, read/send/reply/search emails. Tokens stored in cloud relay.",
       "used_by": [
         "pa-orchestrator",
         "messaging-agent",

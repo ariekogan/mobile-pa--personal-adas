@@ -13,13 +13,13 @@
   ],
   "problem": {
     "statement": "Users need a proactive daily briefing that doesn't just list events but analyzes their day intelligently.",
-    "context": "Proactive daily intelligence worker skill that analyzes calendar, contacts, preferences for smart briefings.",
+    "context": "Proactive daily intelligence worker skill that analyzes calendar events, contacts, and stored preferences to generate smart briefings with conflict detection, travel time warnings, birthday reminders, and personalized insights.",
     "goals": [
-      "Generate smart morning briefings",
-      "Detect scheduling conflicts",
-      "Remind about birthdays",
-      "Check preferences and flag violations",
-      "Provide actionable insights"
+      "Generate smart morning briefings with calendar analysis",
+      "Detect scheduling conflicts and tight transitions",
+      "Remind about upcoming birthdays and important dates from contacts",
+      "Check user preferences and flag violations (e.g., meeting before 10am when user prefers no early meetings)",
+      "Provide actionable insights, not just event lists"
     ]
   },
   "tools": [
@@ -27,7 +27,7 @@
       "id": "tool-intel-cal-today",
       "id_status": "permanent",
       "name": "device.calendar.today",
-      "description": "Get today's events.",
+      "description": "Get all calendar events for today.",
       "inputs": [],
       "output": {
         "type": "object",
@@ -64,13 +64,13 @@
       "id": "tool-intel-cal-upcoming",
       "id_status": "permanent",
       "name": "device.calendar.upcoming",
-      "description": "Get upcoming events.",
+      "description": "Get upcoming calendar events for the next N days.",
       "inputs": [
         {
           "name": "days",
           "type": "number",
           "required": false,
-          "description": "Days ahead"
+          "description": "Days ahead (default 3)"
         }
       ],
       "output": {
@@ -108,7 +108,7 @@
       "id": "tool-intel-contacts-search",
       "id_status": "permanent",
       "name": "device.contacts.search",
-      "description": "Search contacts for birthdays.",
+      "description": "Search contacts by name, relationship, or keyword. Use to find birthdays and important dates.",
       "inputs": [
         {
           "name": "query",
@@ -159,7 +159,7 @@
       "id": "tool-intel-location",
       "id_status": "permanent",
       "name": "device.location.current",
-      "description": "Get current location.",
+      "description": "Get user's current location for commute/travel estimates.",
       "inputs": [],
       "output": {
         "type": "object",
@@ -196,7 +196,7 @@
       "id": "tool-intel-recall",
       "id_status": "permanent",
       "name": "memory.recall",
-      "description": "Recall preferences for briefing.",
+      "description": "Recall user preferences and stored memories to personalize the briefing.",
       "inputs": [
         {
           "name": "query",
@@ -208,7 +208,7 @@
           "name": "type",
           "type": "string",
           "required": false,
-          "description": "Filter"
+          "description": "Filter: preference, fact, instruction"
         },
         {
           "name": "limit",
@@ -254,11 +254,11 @@
       "id": "tool-intel-weather-current",
       "id_status": "permanent",
       "name": "device.weather.current",
-      "description": "Current weather.",
+      "description": "Get current weather conditions — temperature, conditions, humidity, wind, UV index.",
       "inputs": [],
       "output": {
         "type": "object",
-        "description": "Current weather"
+        "description": "Current weather conditions"
       },
       "source": {
         "type": "mcp_bridge",
@@ -291,18 +291,18 @@
       "id": "tool-intel-weather-forecast",
       "id_status": "permanent",
       "name": "device.weather.forecast",
-      "description": "Weather forecast.",
+      "description": "Get weather forecast for the next N days — highs, lows, conditions, rain probability.",
       "inputs": [
         {
           "name": "days",
           "type": "number",
           "required": false,
-          "description": "Days"
+          "description": "Days to forecast (default 3)"
         }
       ],
       "output": {
         "type": "object",
-        "description": "Forecast"
+        "description": "Multi-day weather forecast"
       },
       "source": {
         "type": "mcp_bridge",
@@ -335,30 +335,30 @@
       "id": "tool-intel-commute",
       "id_status": "permanent",
       "name": "device.commute.estimate",
-      "description": "Travel time estimate.",
+      "description": "Estimate travel time between two locations. Use to check if user has enough time between events.",
       "inputs": [
         {
           "name": "from",
           "type": "string",
           "required": true,
-          "description": "From"
+          "description": "Starting location"
         },
         {
           "name": "to",
           "type": "string",
           "required": true,
-          "description": "To"
+          "description": "Destination"
         },
         {
           "name": "mode",
           "type": "string",
           "required": false,
-          "description": "Mode"
+          "description": "Travel mode: driving, transit, walking"
         }
       ],
       "output": {
         "type": "object",
-        "description": "Commute estimate"
+        "description": "Commute estimate with duration and distance"
       },
       "source": {
         "type": "mcp_bridge",
@@ -394,18 +394,18 @@
       "id": "tool-intel-birthdays",
       "id_status": "permanent",
       "name": "device.contacts.birthdays",
-      "description": "Get upcoming birthdays.",
+      "description": "Get contacts with upcoming birthdays in the next N days.",
       "inputs": [
         {
           "name": "days",
           "type": "number",
           "required": false,
-          "description": "Look ahead days"
+          "description": "Look ahead days (default 30)"
         }
       ],
       "output": {
         "type": "object",
-        "description": "Upcoming birthdays"
+        "description": "Upcoming birthdays with days until"
       },
       "source": {
         "type": "mcp_bridge",
@@ -438,24 +438,24 @@
       "id": "tool-intel-rules-match",
       "id_status": "permanent",
       "name": "memory.rules.match",
-      "description": "Check taught rules for briefing.",
+      "description": "Check taught rules matching the current situation. Use during briefing to flag rule violations (e.g., 'no meetings before 10am' vs a 9am event).",
       "inputs": [
         {
           "name": "situation",
           "type": "string",
           "required": true,
-          "description": "Situation"
+          "description": "Situation to match against taught rules"
         },
         {
           "name": "limit",
           "type": "number",
           "required": false,
-          "description": "Max rules"
+          "description": "Max rules to return"
         }
       ],
       "output": {
         "type": "object",
-        "description": "Matching rules"
+        "description": "Matching rules with relevance scores"
       },
       "source": {
         "type": "mcp_bridge",
@@ -490,7 +490,7 @@
       "id": "tool-intel-last-contact",
       "id_status": "permanent",
       "name": "device.contacts.lastContact",
-      "description": "Check last contact date.",
+      "description": "Check when user last communicated with a contact. Flag if it's been too long for close relationships.",
       "inputs": [
         {
           "name": "name",
@@ -501,7 +501,7 @@
       ],
       "output": {
         "type": "object",
-        "description": "Days since last contact"
+        "description": "Days since last contact with suggestion"
       },
       "source": {
         "type": "mcp_bridge",
@@ -536,7 +536,7 @@
       "id": "tool-intel-integrations-check",
       "id_status": "permanent",
       "name": "integrations.check",
-      "description": "Check channel connection status.",
+      "description": "Check if email/WhatsApp is connected before trying to include in briefing.",
       "inputs": [
         {
           "name": "channel",
@@ -582,13 +582,13 @@
       "id": "tool-intel-email-unread",
       "id_status": "permanent",
       "name": "email.unread",
-      "description": "Get unread emails for briefing.",
+      "description": "Get unread emails to summarize in daily briefing.",
       "inputs": [
         {
           "name": "limit",
           "type": "number",
           "required": false,
-          "description": "Max emails"
+          "description": "Max emails (default 10)"
         }
       ],
       "output": {
@@ -626,18 +626,18 @@
       "id": "tool-intel-whatsapp-unread",
       "id_status": "permanent",
       "name": "whatsapp.unread",
-      "description": "Get unread WhatsApp for briefing.",
+      "description": "Get unread WhatsApp messages to summarize in daily briefing.",
       "inputs": [
         {
           "name": "limit",
           "type": "number",
           "required": false,
-          "description": "Max messages"
+          "description": "Max messages (default 20)"
         }
       ],
       "output": {
         "type": "object",
-        "description": "Unread messages"
+        "description": "Unread WhatsApp messages"
       },
       "source": {
         "type": "mcp_bridge",
@@ -671,34 +671,34 @@
     "supported": [
       {
         "id": "today_calendar",
-        "description": "Get today's events.",
+        "description": "Get all calendar events for today.",
         "examples": [
-          "Get today's events.",
-          "I need to get today's events.",
-          "Can you get today's events.?",
-          "Please get today's events."
+          "Get all calendar events for today.",
+          "I need to get all calendar events for today.",
+          "Can you get all calendar events for today.?",
+          "Please get all calendar events for today."
         ],
         "maps_to_workflow": "today_calendar_flow"
       },
       {
         "id": "upcoming_calendar",
-        "description": "Get upcoming events.",
+        "description": "Get upcoming calendar events for the next N days.",
         "examples": [
-          "Get upcoming events.",
-          "I need to get upcoming events.",
-          "Can you get upcoming events.?",
-          "Please get upcoming events."
+          "Get upcoming calendar events for the next N days.",
+          "I need to get upcoming calendar events for the next N days.",
+          "Can you get upcoming calendar events for the next N days.?",
+          "Please get upcoming calendar events for the next N days."
         ],
         "maps_to_workflow": "upcoming_calendar_flow"
       },
       {
         "id": "search_contact",
-        "description": "Search contacts for birthdays.",
+        "description": "Search contacts by name, relationship, or keyword. Use to find birthdays and important dates.",
         "examples": [
-          "Search contacts for birthdays.",
-          "I need to search contacts for birthdays.",
-          "Can you search contacts for birthdays.?",
-          "Please search contacts for birthdays."
+          "Search contacts by name, relationship, or keyword. Use to find birthdays and important dates.",
+          "I need to search contacts by name, relationship, or keyword. Use to find birthdays and important dates.",
+          "Can you search contacts by name, relationship, or keyword. Use to find birthdays and important dates.?",
+          "Please search contacts by name, relationship, or keyword. Use to find birthdays and important dates."
         ],
         "maps_to_workflow": "search_contact_flow",
         "entities": [
@@ -712,23 +712,23 @@
       },
       {
         "id": "current_location",
-        "description": "Get current location.",
+        "description": "Get user's current location for commute/travel estimates.",
         "examples": [
-          "Get current location.",
-          "I need to get current location.",
-          "Can you get current location.?",
-          "Please get current location."
+          "Get user's current location for commute/travel estimates.",
+          "I need to get user's current location for commute/travel estimates.",
+          "Can you get user's current location for commute/travel estimates.?",
+          "Please get user's current location for commute/travel estimates."
         ],
         "maps_to_workflow": "current_location_flow"
       },
       {
         "id": "recall",
-        "description": "Recall preferences for briefing.",
+        "description": "Recall user preferences and stored memories to personalize the briefing.",
         "examples": [
-          "Recall preferences for briefing.",
-          "I need to recall preferences for briefing.",
-          "Can you recall preferences for briefing.?",
-          "Please recall preferences for briefing."
+          "Recall user preferences and stored memories to personalize the briefing.",
+          "I need to recall user preferences and stored memories to personalize the briefing.",
+          "Can you recall user preferences and stored memories to personalize the briefing.?",
+          "Please recall user preferences and stored memories to personalize the briefing."
         ],
         "maps_to_workflow": "recall_flow",
         "entities": [
@@ -742,34 +742,34 @@
       },
       {
         "id": "current_weather",
-        "description": "Current weather.",
+        "description": "Get current weather conditions — temperature, conditions, humidity, wind, UV index.",
         "examples": [
-          "Current weather.",
-          "I need to current weather.",
-          "Can you current weather.?",
-          "Please current weather."
+          "Get current weather conditions — temperature, conditions, humidity, wind, UV index.",
+          "I need to get current weather conditions — temperature, conditions, humidity, wind, UV index.",
+          "Can you get current weather conditions — temperature, conditions, humidity, wind, UV index.?",
+          "Please get current weather conditions — temperature, conditions, humidity, wind, UV index."
         ],
         "maps_to_workflow": "current_weather_flow"
       },
       {
         "id": "forecast_weather",
-        "description": "Weather forecast.",
+        "description": "Get weather forecast for the next N days — highs, lows, conditions, rain probability.",
         "examples": [
-          "Weather forecast.",
-          "I need to weather forecast.",
-          "Can you weather forecast.?",
-          "Please weather forecast."
+          "Get weather forecast for the next N days — highs, lows, conditions, rain probability.",
+          "I need to get weather forecast for the next N days — highs, lows, conditions, rain probability.",
+          "Can you get weather forecast for the next N days — highs, lows, conditions, rain probability.?",
+          "Please get weather forecast for the next N days — highs, lows, conditions, rain probability."
         ],
         "maps_to_workflow": "forecast_weather_flow"
       },
       {
         "id": "estimate_commute",
-        "description": "Travel time estimate.",
+        "description": "Estimate travel time between two locations. Use to check if user has enough time between events.",
         "examples": [
-          "Travel time estimate.",
-          "I need to travel time estimate.",
-          "Can you travel time estimate.?",
-          "Please travel time estimate."
+          "Estimate travel time between two locations. Use to check if user has enough time between events.",
+          "I need to estimate travel time between two locations. Use to check if user has enough time between events.",
+          "Can you estimate travel time between two locations. Use to check if user has enough time between events.?",
+          "Please estimate travel time between two locations. Use to check if user has enough time between events."
         ],
         "maps_to_workflow": "estimate_commute_flow",
         "entities": [
@@ -789,23 +789,23 @@
       },
       {
         "id": "birthdays_contact",
-        "description": "Get upcoming birthdays.",
+        "description": "Get contacts with upcoming birthdays in the next N days.",
         "examples": [
-          "Get upcoming birthdays.",
-          "I need to get upcoming birthdays.",
-          "Can you get upcoming birthdays.?",
-          "Please get upcoming birthdays."
+          "Get contacts with upcoming birthdays in the next N days.",
+          "I need to get contacts with upcoming birthdays in the next N days.",
+          "Can you get contacts with upcoming birthdays in the next N days.?",
+          "Please get contacts with upcoming birthdays in the next N days."
         ],
         "maps_to_workflow": "birthdays_contact_flow"
       },
       {
         "id": "match_rule",
-        "description": "Check taught rules for briefing.",
+        "description": "Check taught rules matching the current situation. Use during briefing to flag rule violations (e.g., 'no meetings before 10am' vs a 9am event).",
         "examples": [
-          "Check taught rules for briefing.",
-          "I need to check taught rules for briefing.",
-          "Can you check taught rules for briefing.?",
-          "Please check taught rules for briefing."
+          "Check taught rules matching the current situation. Use during briefing to flag rule violations (e.g., 'no meetings before 10am' vs a 9am event).",
+          "I need to check taught rules matching the current situation. Use during briefing to flag rule violations (e.g., 'no meetings before 10am' vs a 9am event).",
+          "Can you check taught rules matching the current situation. Use during briefing to flag rule violations (e.g., 'no meetings before 10am' vs a 9am event).?",
+          "Please check taught rules matching the current situation. Use during briefing to flag rule violations (e.g., 'no meetings before 10am' vs a 9am event)."
         ],
         "maps_to_workflow": "match_rule_flow",
         "entities": [
@@ -819,12 +819,12 @@
       },
       {
         "id": "lastContact_contact",
-        "description": "Check last contact date.",
+        "description": "Check when user last communicated with a contact. Flag if it's been too long for close relationships.",
         "examples": [
-          "Check last contact date.",
-          "I need to check last contact date.",
-          "Can you check last contact date.?",
-          "Please check last contact date."
+          "Check when user last communicated with a contact. Flag if it's been too long for close relationships.",
+          "I need to check when user last communicated with a contact. Flag if it's been too long for close relationships.",
+          "Can you check when user last communicated with a contact. Flag if it's been too long for close relationships.?",
+          "Please check when user last communicated with a contact. Flag if it's been too long for close relationships."
         ],
         "maps_to_workflow": "lastContact_contact_flow",
         "entities": [
@@ -838,12 +838,12 @@
       },
       {
         "id": "check",
-        "description": "Check channel connection status.",
+        "description": "Check if email/WhatsApp is connected before trying to include in briefing.",
         "examples": [
-          "Check channel connection status.",
-          "I need to check channel connection status.",
-          "Can you check channel connection status.?",
-          "Please check channel connection status."
+          "Check if email/WhatsApp is connected before trying to include in briefing.",
+          "I need to check if email/WhatsApp is connected before trying to include in briefing.",
+          "Can you check if email/WhatsApp is connected before trying to include in briefing.?",
+          "Please check if email/WhatsApp is connected before trying to include in briefing."
         ],
         "maps_to_workflow": "check_flow",
         "entities": [
@@ -857,23 +857,23 @@
       },
       {
         "id": "unread",
-        "description": "Get unread emails for briefing.",
+        "description": "Get unread emails to summarize in daily briefing.",
         "examples": [
-          "Get unread emails for briefing.",
-          "I need to get unread emails for briefing.",
-          "Can you get unread emails for briefing.?",
-          "Please get unread emails for briefing."
+          "Get unread emails to summarize in daily briefing.",
+          "I need to get unread emails to summarize in daily briefing.",
+          "Can you get unread emails to summarize in daily briefing.?",
+          "Please get unread emails to summarize in daily briefing."
         ],
         "maps_to_workflow": "unread_flow"
       },
       {
         "id": "unread",
-        "description": "Get unread WhatsApp for briefing.",
+        "description": "Get unread WhatsApp messages to summarize in daily briefing.",
         "examples": [
-          "Get unread WhatsApp for briefing.",
-          "I need to get unread WhatsApp for briefing.",
-          "Can you get unread WhatsApp for briefing.?",
-          "Please get unread WhatsApp for briefing."
+          "Get unread WhatsApp messages to summarize in daily briefing.",
+          "I need to get unread WhatsApp messages to summarize in daily briefing.",
+          "Can you get unread WhatsApp messages to summarize in daily briefing.?",
+          "Please get unread WhatsApp messages to summarize in daily briefing."
         ],
         "maps_to_workflow": "unread_flow"
       }
@@ -897,7 +897,7 @@
     "workflows": [
       {
         "id": "today_calendar_flow",
-        "name": "Get today's events.",
+        "name": "Get all calendar events for today.",
         "description": "Auto-generated workflow for today_calendar",
         "trigger": "today_calendar",
         "steps": [
@@ -908,7 +908,7 @@
       },
       {
         "id": "upcoming_calendar_flow",
-        "name": "Get upcoming events.",
+        "name": "Get upcoming calendar events for the next N days.",
         "description": "Auto-generated workflow for upcoming_calendar",
         "trigger": "upcoming_calendar",
         "steps": [
@@ -919,7 +919,7 @@
       },
       {
         "id": "search_contact_flow",
-        "name": "Search contacts for birthdays.",
+        "name": "Search contacts by name, relationship, or keyword. Use to find birthdays and important dates.",
         "description": "Auto-generated workflow for search_contact",
         "trigger": "search_contact",
         "steps": [
@@ -930,7 +930,7 @@
       },
       {
         "id": "current_location_flow",
-        "name": "Get current location.",
+        "name": "Get user's current location for commute/travel estimates.",
         "description": "Auto-generated workflow for current_location",
         "trigger": "current_location",
         "steps": [
@@ -941,7 +941,7 @@
       },
       {
         "id": "recall_flow",
-        "name": "Recall preferences for briefing.",
+        "name": "Recall user preferences and stored memories to personalize the briefing.",
         "description": "Auto-generated workflow for recall",
         "trigger": "recall",
         "steps": [
@@ -952,7 +952,7 @@
       },
       {
         "id": "current_weather_flow",
-        "name": "Current weather.",
+        "name": "Get current weather conditions — temperature, conditions, humidity, wind, UV index.",
         "description": "Auto-generated workflow for current_weather",
         "trigger": "current_weather",
         "steps": [
@@ -963,7 +963,7 @@
       },
       {
         "id": "forecast_weather_flow",
-        "name": "Weather forecast.",
+        "name": "Get weather forecast for the next N days — highs, lows, conditions, rain probability.",
         "description": "Auto-generated workflow for forecast_weather",
         "trigger": "forecast_weather",
         "steps": [
@@ -974,7 +974,7 @@
       },
       {
         "id": "estimate_commute_flow",
-        "name": "Travel time estimate.",
+        "name": "Estimate travel time between two locations. Use to check if user has enough time between events.",
         "description": "Auto-generated workflow for estimate_commute",
         "trigger": "estimate_commute",
         "steps": [
@@ -985,7 +985,7 @@
       },
       {
         "id": "birthdays_contact_flow",
-        "name": "Get upcoming birthdays.",
+        "name": "Get contacts with upcoming birthdays in the next N days.",
         "description": "Auto-generated workflow for birthdays_contact",
         "trigger": "birthdays_contact",
         "steps": [
@@ -996,7 +996,7 @@
       },
       {
         "id": "match_rule_flow",
-        "name": "Check taught rules for briefing.",
+        "name": "Check taught rules matching the current situation. Use during briefing to flag rule violations (e.g., 'no meetings before 10am' vs a 9am event).",
         "description": "Auto-generated workflow for match_rule",
         "trigger": "match_rule",
         "steps": [
@@ -1007,7 +1007,7 @@
       },
       {
         "id": "lastContact_contact_flow",
-        "name": "Check last contact date.",
+        "name": "Check when user last communicated with a contact. Flag if it's been too long for close relationships.",
         "description": "Auto-generated workflow for lastContact_contact",
         "trigger": "lastContact_contact",
         "steps": [
@@ -1018,7 +1018,7 @@
       },
       {
         "id": "check_flow",
-        "name": "Check channel connection status.",
+        "name": "Check if email/WhatsApp is connected before trying to include in briefing.",
         "description": "Auto-generated workflow for check",
         "trigger": "check",
         "steps": [
@@ -1029,7 +1029,7 @@
       },
       {
         "id": "unread_flow",
-        "name": "Get unread emails for briefing.",
+        "name": "Get unread emails to summarize in daily briefing.",
         "description": "Auto-generated workflow for unread",
         "trigger": "unread",
         "steps": [
@@ -1040,7 +1040,7 @@
       },
       {
         "id": "unread_flow",
-        "name": "Get unread WhatsApp for briefing.",
+        "name": "Get unread WhatsApp messages to summarize in daily briefing.",
         "description": "Auto-generated workflow for unread",
         "trigger": "unread",
         "steps": [
@@ -1059,154 +1059,154 @@
   "scenarios": [
     {
       "id": "today_calendar",
-      "title": "Get today's events.",
+      "title": "Get all calendar events for today.",
       "description": "Test scenario for today calendar",
       "steps": [
-        "User says: \"Get today's events.\"",
-        "Agent calls device.calendar.today — get today's events.",
+        "User says: \"Get all calendar events for today.\"",
+        "Agent calls device.calendar.today — get all calendar events for today.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for today calendar is handled successfully."
     },
     {
       "id": "upcoming_calendar",
-      "title": "Get upcoming events.",
+      "title": "Get upcoming calendar events for the next N days.",
       "description": "Test scenario for upcoming calendar",
       "steps": [
-        "User says: \"Get upcoming events.\"",
-        "Agent calls device.calendar.upcoming — get upcoming events.",
+        "User says: \"Get upcoming calendar events for the next N days.\"",
+        "Agent calls device.calendar.upcoming — get upcoming calendar events for the next n days.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for upcoming calendar is handled successfully."
     },
     {
       "id": "search_contact",
-      "title": "Search contacts for birthdays.",
+      "title": "Search contacts by name, relationship, or keyword. Use to find birthdays and important dates.",
       "description": "Test scenario for search contact",
       "steps": [
-        "User says: \"Search contacts for birthdays.\"",
-        "Agent calls device.contacts.search — search contacts for birthdays.",
+        "User says: \"Search contacts by name, relationship, or keyword. Use to find birthdays and important dates.\"",
+        "Agent calls device.contacts.search — search contacts by name, relationship, or keyword. use to find birthdays and important dates.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for search contact is handled successfully."
     },
     {
       "id": "current_location",
-      "title": "Get current location.",
+      "title": "Get user's current location for commute/travel estimates.",
       "description": "Test scenario for current location",
       "steps": [
-        "User says: \"Get current location.\"",
-        "Agent calls device.location.current — get current location.",
+        "User says: \"Get user's current location for commute/travel estimates.\"",
+        "Agent calls device.location.current — get user's current location for commute/travel estimates.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for current location is handled successfully."
     },
     {
       "id": "recall",
-      "title": "Recall preferences for briefing.",
+      "title": "Recall user preferences and stored memories to personalize the briefing.",
       "description": "Test scenario for recall",
       "steps": [
-        "User says: \"Recall preferences for briefing.\"",
-        "Agent calls memory.recall — recall preferences for briefing.",
+        "User says: \"Recall user preferences and stored memories to personalize the briefing.\"",
+        "Agent calls memory.recall — recall user preferences and stored memories to personalize the briefing.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for recall is handled successfully."
     },
     {
       "id": "current_weather",
-      "title": "Current weather.",
+      "title": "Get current weather conditions — temperature, conditions, humidity, wind, UV index.",
       "description": "Test scenario for current weather",
       "steps": [
-        "User says: \"Current weather.\"",
-        "Agent calls device.weather.current — current weather.",
+        "User says: \"Get current weather conditions — temperature, conditions, humidity, wind, UV index.\"",
+        "Agent calls device.weather.current — get current weather conditions — temperature, conditions, humidity, wind, uv index.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for current weather is handled successfully."
     },
     {
       "id": "forecast_weather",
-      "title": "Weather forecast.",
+      "title": "Get weather forecast for the next N days — highs, lows, conditions, rain probability.",
       "description": "Test scenario for forecast weather",
       "steps": [
-        "User says: \"Weather forecast.\"",
-        "Agent calls device.weather.forecast — weather forecast.",
+        "User says: \"Get weather forecast for the next N days — highs, lows, conditions, rain probability.\"",
+        "Agent calls device.weather.forecast — get weather forecast for the next n days — highs, lows, conditions, rain probability.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for forecast weather is handled successfully."
     },
     {
       "id": "estimate_commute",
-      "title": "Travel time estimate.",
+      "title": "Estimate travel time between two locations. Use to check if user has enough time between events.",
       "description": "Test scenario for estimate commute",
       "steps": [
-        "User says: \"Travel time estimate.\"",
-        "Agent calls device.commute.estimate — travel time estimate.",
+        "User says: \"Estimate travel time between two locations. Use to check if user has enough time between events.\"",
+        "Agent calls device.commute.estimate — estimate travel time between two locations. use to check if user has enough time between events.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for estimate commute is handled successfully."
     },
     {
       "id": "birthdays_contact",
-      "title": "Get upcoming birthdays.",
+      "title": "Get contacts with upcoming birthdays in the next N days.",
       "description": "Test scenario for birthdays contact",
       "steps": [
-        "User says: \"Get upcoming birthdays.\"",
-        "Agent calls device.contacts.birthdays — get upcoming birthdays.",
+        "User says: \"Get contacts with upcoming birthdays in the next N days.\"",
+        "Agent calls device.contacts.birthdays — get contacts with upcoming birthdays in the next n days.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for birthdays contact is handled successfully."
     },
     {
       "id": "match_rule",
-      "title": "Check taught rules for briefing.",
+      "title": "Check taught rules matching the current situation. Use during briefing to flag rule violations (e.g., 'no meetings before 10am' vs a 9am event).",
       "description": "Test scenario for match rule",
       "steps": [
-        "User says: \"Check taught rules for briefing.\"",
-        "Agent calls memory.rules.match — check taught rules for briefing.",
+        "User says: \"Check taught rules matching the current situation. Use during briefing to flag rule violations (e.g., 'no meetings before 10am' vs a 9am event).\"",
+        "Agent calls memory.rules.match — check taught rules matching the current situation. use during briefing to flag rule violations (e.g., 'no meetings before 10am' vs a 9am event).",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for match rule is handled successfully."
     },
     {
       "id": "lastContact_contact",
-      "title": "Check last contact date.",
+      "title": "Check when user last communicated with a contact. Flag if it's been too long for close relationships.",
       "description": "Test scenario for lastContact contact",
       "steps": [
-        "User says: \"Check last contact date.\"",
-        "Agent calls device.contacts.lastContact — check last contact date.",
+        "User says: \"Check when user last communicated with a contact. Flag if it's been too long for close relationships.\"",
+        "Agent calls device.contacts.lastContact — check when user last communicated with a contact. flag if it's been too long for close relationships.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for lastContact contact is handled successfully."
     },
     {
       "id": "check",
-      "title": "Check channel connection status.",
+      "title": "Check if email/WhatsApp is connected before trying to include in briefing.",
       "description": "Test scenario for check",
       "steps": [
-        "User says: \"Check channel connection status.\"",
-        "Agent calls integrations.check — check channel connection status.",
+        "User says: \"Check if email/WhatsApp is connected before trying to include in briefing.\"",
+        "Agent calls integrations.check — check if email/whatsapp is connected before trying to include in briefing.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for check is handled successfully."
     },
     {
       "id": "unread",
-      "title": "Get unread emails for briefing.",
+      "title": "Get unread emails to summarize in daily briefing.",
       "description": "Test scenario for unread",
       "steps": [
-        "User says: \"Get unread emails for briefing.\"",
-        "Agent calls email.unread — get unread emails for briefing.",
+        "User says: \"Get unread emails to summarize in daily briefing.\"",
+        "Agent calls email.unread — get unread emails to summarize in daily briefing.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for unread is handled successfully."
     },
     {
       "id": "unread",
-      "title": "Get unread WhatsApp for briefing.",
+      "title": "Get unread WhatsApp messages to summarize in daily briefing.",
       "description": "Test scenario for unread",
       "steps": [
-        "User says: \"Get unread WhatsApp for briefing.\"",
-        "Agent calls email.unread — get unread emails for briefing.",
+        "User says: \"Get unread WhatsApp messages to summarize in daily briefing.\"",
+        "Agent calls email.unread — get unread emails to summarize in daily briefing.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for unread is handled successfully."
@@ -1214,16 +1214,16 @@
   ],
   "role": {
     "name": "Daily Intelligence Analyst",
-    "persona": "You are a proactive daily intelligence analyst. You don't just list the schedule — you ANALYZE it.\n\nGather ALL data first:\n1. Today's calendar events\n2. Upcoming events (next 2-3 days)\n3. Current weather + forecast\n4. Unread emails and WhatsApp (if connected)\n5. User preferences from memory\n6. Taught rules\n7. Upcoming birthdays\n8. Commute estimates between events\n\nAnalyze for: rule violations, weather impact, conflicts, tight transitions, birthday reminders, commute advice.\n\nPresent as structured briefing: Weather, Key Alerts, Today's Schedule, Look-ahead.",
+    "persona": "You are a proactive daily intelligence analyst. You don't just list the user's schedule — you ANALYZE it.\n\nCONTEXT FROM ORCHESTRATOR:\nThe orchestrator may pass context in the handoff summary — preferences, rules, or specific requests. Check it and factor it in.\n\nWhen generating a briefing, gather ALL data first (call in parallel where possible):\n1. Get today's calendar events\n2. Get upcoming events (next 2-3 days)\n3. Get current weather + forecast\n4. Check for unread emails (email.unread) and WhatsApp messages (whatsapp.unread) — use integrations.check first to see if connected, skip silently if not\n5. Check user's stored preferences (memory.recall with queries like 'schedule preferences', 'meeting preferences', 'morning routine')\n5. Check taught rules (memory.rules.match with situation 'daily briefing morning routine') — user may have taught rules like 'never schedule before 10am' or 'remind me about medications'\n6. Check upcoming birthdays from contacts\n7. Check last contact dates for close relationships (device.contacts.lastContact for family/friends) — flag if user hasn't talked to someone important in >10 days\n8. Estimate commute times between events with different locations\n\nThen analyze for:\n- RULE VIOLATIONS: If taught rules conflict with today's schedule, flag them prominently. Example: user has rule 'no meetings before 10am' but there's a 9am standup → 'Heads up: You have a 9am meeting, but your rule says no meetings before 10am.'\n- Weather impact: Rain? Suggest umbrella. Hot outdoor event?\n- Schedule conflicts or back-to-back meetings with no buffer\n- Tight transitions: commute estimates vs available time between events\n- Birthday reminders (today and upcoming week)\n- Relationship care: 'You haven't talked to David in 14 days — want to reach out?'\n- Important upcoming events (anniversaries, appointments)\n- Commute advice: 'Leave by X:XX to make your Y:00 meeting'\n\nPresent findings as a structured briefing:\n1. Weather summary (one line)\n2. Key alerts (rule violations, conflicts, birthdays, travel warnings, relationship nudges)\n3. Today's schedule with commute notes\n4. Look-ahead (next 2-3 days highlights)\n\nBe proactive — suggest actions when appropriate. Keep it concise but insightful.",
     "goals": [
-      "Analyze calendar for conflicts",
-      "Cross-reference contacts for birthdays",
+      "Analyze calendar for conflicts, gaps, and transition issues",
+      "Cross-reference contacts for birthdays and important dates",
       "Check preferences to flag violations",
-      "Generate actionable insights"
+      "Generate actionable insights, not just event dumps"
     ],
     "limitations": [
-      "Cannot create events or send messages",
-      "Can check unread emails and WhatsApp for briefing summaries"
+      "Cannot create events or send messages — only analyze and advise",
+      "Can check unread emails and WhatsApp messages for briefing summaries"
     ],
     "communication_style": {
       "tone": "warm",

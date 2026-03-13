@@ -1,7 +1,7 @@
 {
   "id": "notification-triage",
   "name": "Notification Triage",
-  "description": "Users are overwhelmed by notifications. They need intelligent triage.",
+  "description": "Users are overwhelmed by notifications. They need intelligent triage — not just a dump of every alert.",
   "version": "1.0.0",
   "phase": "DEPLOYED",
   "ui_capable": false,
@@ -12,13 +12,14 @@
     "memory-mcp"
   ],
   "problem": {
-    "statement": "Users are overwhelmed by notifications. They need intelligent triage.",
-    "context": "Notification analyst worker that groups, prioritizes, and summarizes notifications.",
+    "statement": "Users are overwhelmed by notifications. They need intelligent triage — not just a dump of every alert.",
+    "context": "Notification analyst worker skill that groups, prioritizes, and summarizes device notifications with context-awareness. Cross-references contacts for relationship priority, checks DND status, and suppresses noise during focus time.",
     "goals": [
-      "Group by urgency",
-      "Cross-reference contacts for VIP senders",
-      "Manage DND",
-      "Surface VIP messages during DND"
+      "Group notifications by urgency (urgent/important/routine/noise)",
+      "Cross-reference contacts to identify VIP senders",
+      "Summarize notification groups concisely",
+      "Manage Do Not Disturb settings",
+      "Surface VIP messages even during DND"
     ]
   },
   "tools": [
@@ -26,18 +27,18 @@
       "id": "tool-notif-list",
       "id_status": "permanent",
       "name": "device.notifications.list",
-      "description": "List notifications.",
+      "description": "List device notifications, optionally filtered to unread only.",
       "inputs": [
         {
           "name": "unread_only",
           "type": "boolean",
           "required": false,
-          "description": "Filter unread"
+          "description": "If true, return only unread notifications"
         }
       ],
       "output": {
         "type": "object",
-        "description": "Notifications"
+        "description": "Notifications with app, sender, body, priority, read status"
       },
       "source": {
         "type": "mcp_bridge",
@@ -75,13 +76,13 @@
       "id": "tool-notif-group",
       "id_status": "permanent",
       "name": "device.notifications.group",
-      "description": "Group notifications.",
+      "description": "Group notifications by app, sender, or priority for triage analysis.",
       "inputs": [
         {
           "name": "group_by",
           "type": "string",
           "required": true,
-          "description": "Group by: app, sender, priority"
+          "description": "How to group: app, sender, or priority"
         }
       ],
       "output": {
@@ -121,24 +122,24 @@
       "id": "tool-notif-dismiss",
       "id_status": "permanent",
       "name": "device.notifications.dismiss",
-      "description": "Dismiss notifications.",
+      "description": "Dismiss notifications by ID (single) or by app (batch). Dismissed notifications won't appear again.",
       "inputs": [
         {
           "name": "notification_id",
           "type": "string",
           "required": false,
-          "description": "Single ID"
+          "description": "Dismiss a single notification by ID"
         },
         {
           "name": "app",
           "type": "string",
           "required": false,
-          "description": "Dismiss by app"
+          "description": "Dismiss all notifications from this app"
         }
       ],
       "output": {
         "type": "object",
-        "description": "Dismissal confirmation"
+        "description": "Dismissal confirmation with remaining count"
       },
       "source": {
         "type": "mcp_bridge",
@@ -171,7 +172,7 @@
       "id": "tool-notif-dnd-get",
       "id_status": "permanent",
       "name": "device.dnd.get",
-      "description": "Get DND status.",
+      "description": "Get current Do Not Disturb status — enabled, schedule, and allowlist.",
       "inputs": [],
       "output": {
         "type": "object",
@@ -193,8 +194,13 @@
             "id": "tool-dnd-get-auto",
             "input": {},
             "output": {
-              "success": true,
-              "data": {}
+              "results": [
+                {
+                  "id": 1,
+                  "name": "Example item"
+                }
+              ],
+              "total_count": 1
             },
             "description": "Auto-generated example for device.dnd.get"
           }
@@ -208,36 +214,36 @@
       "id": "tool-notif-dnd-set",
       "id_status": "permanent",
       "name": "device.dnd.set",
-      "description": "Update DND settings.",
+      "description": "Update DND settings — toggle on/off, change schedule, update allowlist.",
       "inputs": [
         {
           "name": "enabled",
           "type": "boolean",
           "required": false,
-          "description": "On/off"
+          "description": "Turn DND on or off"
         },
         {
           "name": "schedule_start",
           "type": "string",
           "required": false,
-          "description": "Start HH:MM"
+          "description": "DND start time HH:MM"
         },
         {
           "name": "schedule_end",
           "type": "string",
           "required": false,
-          "description": "End HH:MM"
+          "description": "DND end time HH:MM"
         },
         {
           "name": "allowlist",
           "type": "array",
           "required": false,
-          "description": "Contacts who break through"
+          "description": "Contacts who break through DND"
         }
       ],
       "output": {
         "type": "object",
-        "description": "Updated DND"
+        "description": "Updated DND state"
       },
       "source": {
         "type": "mcp_bridge",
@@ -255,9 +261,13 @@
             "id": "tool-dnd-set-auto",
             "input": {},
             "output": {
-              "id": 1,
-              "status": "updated",
-              "message": "Updated successfully."
+              "results": [
+                {
+                  "id": 1,
+                  "name": "Example item"
+                }
+              ],
+              "total_count": 1
             },
             "description": "Auto-generated example for device.dnd.set"
           }
@@ -271,7 +281,7 @@
       "id": "tool-notif-contacts-search",
       "id_status": "permanent",
       "name": "device.contacts.search",
-      "description": "Search contacts for sender identification.",
+      "description": "Search contacts to identify sender relationships for priority classification.",
       "inputs": [
         {
           "name": "query",
@@ -322,7 +332,7 @@
       "id": "tool-notif-recall",
       "id_status": "permanent",
       "name": "memory.recall",
-      "description": "Check notification preferences.",
+      "description": "Check user preferences for notification rules, quiet hours, and priority overrides.",
       "inputs": [
         {
           "name": "query",
@@ -334,7 +344,7 @@
           "name": "type",
           "type": "string",
           "required": false,
-          "description": "Filter"
+          "description": "Filter: preference, fact, instruction"
         },
         {
           "name": "limit",
@@ -380,13 +390,13 @@
       "id": "tool-notif-ctx-read",
       "id_status": "permanent",
       "name": "context.read",
-      "description": "Read active situations.",
+      "description": "Read active situations — affects notification priority (e.g., in a meeting = suppress routine).",
       "inputs": [
         {
           "name": "type",
           "type": "string",
           "required": false,
-          "description": "Filter"
+          "description": "Filter: situation or plan"
         },
         {
           "name": "limit",
@@ -397,7 +407,7 @@
       ],
       "output": {
         "type": "object",
-        "description": "Active context"
+        "description": "Active context entries"
       },
       "source": {
         "type": "mcp_bridge",
@@ -430,7 +440,7 @@
       "id": "tool-notif-integrations-check",
       "id_status": "permanent",
       "name": "integrations.check",
-      "description": "Check channel connection.",
+      "description": "Check if a channel (email, whatsapp) is connected before trying to read from it.",
       "inputs": [
         {
           "name": "channel",
@@ -476,13 +486,13 @@
       "id": "tool-notif-email-unread",
       "id_status": "permanent",
       "name": "email.unread",
-      "description": "Get unread emails for triage.",
+      "description": "Get unread emails from Gmail inbox. Include in triage as 'email' category.",
       "inputs": [
         {
           "name": "limit",
           "type": "number",
           "required": false,
-          "description": "Max emails"
+          "description": "Max emails (default 10)"
         }
       ],
       "output": {
@@ -520,18 +530,18 @@
       "id": "tool-notif-whatsapp-unread",
       "id_status": "permanent",
       "name": "whatsapp.unread",
-      "description": "Get unread WhatsApp for triage.",
+      "description": "Get unread WhatsApp messages. Include in triage as 'WhatsApp' category.",
       "inputs": [
         {
           "name": "limit",
           "type": "number",
           "required": false,
-          "description": "Max messages"
+          "description": "Max messages (default 20)"
         }
       ],
       "output": {
         "type": "object",
-        "description": "Unread messages"
+        "description": "Unread WhatsApp messages"
       },
       "source": {
         "type": "mcp_bridge",
@@ -565,23 +575,23 @@
     "supported": [
       {
         "id": "list_notifications",
-        "description": "List notifications.",
+        "description": "List device notifications, optionally filtered to unread only.",
         "examples": [
-          "List notifications.",
-          "I need to list notifications.",
-          "Can you list notifications.?",
-          "Please list notifications."
+          "List device notifications, optionally filtered to unread only.",
+          "I need to list device notifications, optionally filtered to unread only.",
+          "Can you list device notifications, optionally filtered to unread only.?",
+          "Please list device notifications, optionally filtered to unread only."
         ],
         "maps_to_workflow": "list_notifications_flow"
       },
       {
         "id": "group_notification",
-        "description": "Group notifications.",
+        "description": "Group notifications by app, sender, or priority for triage analysis.",
         "examples": [
-          "Group notifications.",
-          "I need to group notifications.",
-          "Can you group notifications.?",
-          "Please group notifications."
+          "Group notifications by app, sender, or priority for triage analysis.",
+          "I need to group notifications by app, sender, or priority for triage analysis.",
+          "Can you group notifications by app, sender, or priority for triage analysis.?",
+          "Please group notifications by app, sender, or priority for triage analysis."
         ],
         "maps_to_workflow": "group_notification_flow",
         "entities": [
@@ -595,45 +605,45 @@
       },
       {
         "id": "dismiss_notification",
-        "description": "Dismiss notifications.",
+        "description": "Dismiss notifications by ID (single) or by app (batch). Dismissed notifications won't appear again.",
         "examples": [
-          "Dismiss notifications.",
-          "I need to dismiss notifications.",
-          "Can you dismiss notifications.?",
-          "Please dismiss notifications."
+          "Dismiss notifications by ID (single) or by app (batch). Dismissed notifications won't appear again.",
+          "I need to dismiss notifications by ID (single) or by app (batch). Dismissed notifications won't appear again.",
+          "Can you dismiss notifications by ID (single) or by app (batch). Dismissed notifications won't appear again.?",
+          "Please dismiss notifications by ID (single) or by app (batch). Dismissed notifications won't appear again."
         ],
         "maps_to_workflow": "dismiss_notification_flow"
       },
       {
         "id": "get_dnd",
-        "description": "Get DND status.",
+        "description": "Get current Do Not Disturb status — enabled, schedule, and allowlist.",
         "examples": [
-          "Get DND status.",
-          "I need to get DND status.",
-          "Can you get DND status.?",
-          "Please get DND status."
+          "Get current Do Not Disturb status — enabled, schedule, and allowlist.",
+          "I need to get current Do Not Disturb status — enabled, schedule, and allowlist.",
+          "Can you get current Do Not Disturb status — enabled, schedule, and allowlist.?",
+          "Please get current Do Not Disturb status — enabled, schedule, and allowlist."
         ],
         "maps_to_workflow": "get_dnd_flow"
       },
       {
         "id": "set_dnd",
-        "description": "Update DND settings.",
+        "description": "Update DND settings — toggle on/off, change schedule, update allowlist.",
         "examples": [
-          "Update DND settings.",
-          "I need to update DND settings.",
-          "Can you update DND settings.?",
-          "Please update DND settings."
+          "Update DND settings — toggle on/off, change schedule, update allowlist.",
+          "I need to update DND settings — toggle on/off, change schedule, update allowlist.",
+          "Can you update DND settings — toggle on/off, change schedule, update allowlist.?",
+          "Please update DND settings — toggle on/off, change schedule, update allowlist."
         ],
         "maps_to_workflow": "set_dnd_flow"
       },
       {
         "id": "search_contact",
-        "description": "Search contacts for sender identification.",
+        "description": "Search contacts to identify sender relationships for priority classification.",
         "examples": [
-          "Search contacts for sender identification.",
-          "I need to search contacts for sender identification.",
-          "Can you search contacts for sender identification.?",
-          "Please search contacts for sender identification."
+          "Search contacts to identify sender relationships for priority classification.",
+          "I need to search contacts to identify sender relationships for priority classification.",
+          "Can you search contacts to identify sender relationships for priority classification.?",
+          "Please search contacts to identify sender relationships for priority classification."
         ],
         "maps_to_workflow": "search_contact_flow",
         "entities": [
@@ -647,12 +657,12 @@
       },
       {
         "id": "recall",
-        "description": "Check notification preferences.",
+        "description": "Check user preferences for notification rules, quiet hours, and priority overrides.",
         "examples": [
-          "Check notification preferences.",
-          "I need to check notification preferences.",
-          "Can you check notification preferences.?",
-          "Please check notification preferences."
+          "Check user preferences for notification rules, quiet hours, and priority overrides.",
+          "I need to check user preferences for notification rules, quiet hours, and priority overrides.",
+          "Can you check user preferences for notification rules, quiet hours, and priority overrides.?",
+          "Please check user preferences for notification rules, quiet hours, and priority overrides."
         ],
         "maps_to_workflow": "recall_flow",
         "entities": [
@@ -666,23 +676,23 @@
       },
       {
         "id": "read",
-        "description": "Read active situations.",
+        "description": "Read active situations — affects notification priority (e.g., in a meeting = suppress routine).",
         "examples": [
-          "Read active situations.",
-          "I need to read active situations.",
-          "Can you read active situations.?",
-          "Please read active situations."
+          "Read active situations — affects notification priority (e.g., in a meeting = suppress routine).",
+          "I need to read active situations — affects notification priority (e.g., in a meeting = suppress routine).",
+          "Can you read active situations — affects notification priority (e.g., in a meeting = suppress routine).?",
+          "Please read active situations — affects notification priority (e.g., in a meeting = suppress routine)."
         ],
         "maps_to_workflow": "read_flow"
       },
       {
         "id": "check",
-        "description": "Check channel connection.",
+        "description": "Check if a channel (email, whatsapp) is connected before trying to read from it.",
         "examples": [
-          "Check channel connection.",
-          "I need to check channel connection.",
-          "Can you check channel connection.?",
-          "Please check channel connection."
+          "Check if a channel (email, whatsapp) is connected before trying to read from it.",
+          "I need to check if a channel (email, whatsapp) is connected before trying to read from it.",
+          "Can you check if a channel (email, whatsapp) is connected before trying to read from it.?",
+          "Please check if a channel (email, whatsapp) is connected before trying to read from it."
         ],
         "maps_to_workflow": "check_flow",
         "entities": [
@@ -696,23 +706,23 @@
       },
       {
         "id": "unread",
-        "description": "Get unread emails for triage.",
+        "description": "Get unread emails from Gmail inbox. Include in triage as 'email' category.",
         "examples": [
-          "Get unread emails for triage.",
-          "I need to get unread emails for triage.",
-          "Can you get unread emails for triage.?",
-          "Please get unread emails for triage."
+          "Get unread emails from Gmail inbox. Include in triage as 'email' category.",
+          "I need to get unread emails from Gmail inbox. Include in triage as 'email' category.",
+          "Can you get unread emails from Gmail inbox. Include in triage as 'email' category.?",
+          "Please get unread emails from Gmail inbox. Include in triage as 'email' category."
         ],
         "maps_to_workflow": "unread_flow"
       },
       {
         "id": "unread",
-        "description": "Get unread WhatsApp for triage.",
+        "description": "Get unread WhatsApp messages. Include in triage as 'WhatsApp' category.",
         "examples": [
-          "Get unread WhatsApp for triage.",
-          "I need to get unread WhatsApp for triage.",
-          "Can you get unread WhatsApp for triage.?",
-          "Please get unread WhatsApp for triage."
+          "Get unread WhatsApp messages. Include in triage as 'WhatsApp' category.",
+          "I need to get unread WhatsApp messages. Include in triage as 'WhatsApp' category.",
+          "Can you get unread WhatsApp messages. Include in triage as 'WhatsApp' category.?",
+          "Please get unread WhatsApp messages. Include in triage as 'WhatsApp' category."
         ],
         "maps_to_workflow": "unread_flow"
       }
@@ -736,7 +746,7 @@
     "workflows": [
       {
         "id": "list_notifications_flow",
-        "name": "List notifications.",
+        "name": "List device notifications, optionally filtered to unread only.",
         "description": "Auto-generated workflow for list_notifications",
         "trigger": "list_notifications",
         "steps": [
@@ -747,7 +757,7 @@
       },
       {
         "id": "group_notification_flow",
-        "name": "Group notifications.",
+        "name": "Group notifications by app, sender, or priority for triage analysis.",
         "description": "Auto-generated workflow for group_notification",
         "trigger": "group_notification",
         "steps": [
@@ -758,7 +768,7 @@
       },
       {
         "id": "dismiss_notification_flow",
-        "name": "Dismiss notifications.",
+        "name": "Dismiss notifications by ID (single) or by app (batch). Dismissed notifications won't appear again.",
         "description": "Auto-generated workflow for dismiss_notification",
         "trigger": "dismiss_notification",
         "steps": [
@@ -769,7 +779,7 @@
       },
       {
         "id": "get_dnd_flow",
-        "name": "Get DND status.",
+        "name": "Get current Do Not Disturb status — enabled, schedule, and allowlist.",
         "description": "Auto-generated workflow for get_dnd",
         "trigger": "get_dnd",
         "steps": [
@@ -780,7 +790,7 @@
       },
       {
         "id": "set_dnd_flow",
-        "name": "Update DND settings.",
+        "name": "Update DND settings — toggle on/off, change schedule, update allowlist.",
         "description": "Auto-generated workflow for set_dnd",
         "trigger": "set_dnd",
         "steps": [
@@ -791,7 +801,7 @@
       },
       {
         "id": "search_contact_flow",
-        "name": "Search contacts for sender identification.",
+        "name": "Search contacts to identify sender relationships for priority classification.",
         "description": "Auto-generated workflow for search_contact",
         "trigger": "search_contact",
         "steps": [
@@ -802,7 +812,7 @@
       },
       {
         "id": "recall_flow",
-        "name": "Check notification preferences.",
+        "name": "Check user preferences for notification rules, quiet hours, and priority overrides.",
         "description": "Auto-generated workflow for recall",
         "trigger": "recall",
         "steps": [
@@ -813,7 +823,7 @@
       },
       {
         "id": "read_flow",
-        "name": "Read active situations.",
+        "name": "Read active situations — affects notification priority (e.g., in a meeting = suppress routine).",
         "description": "Auto-generated workflow for read",
         "trigger": "read",
         "steps": [
@@ -824,7 +834,7 @@
       },
       {
         "id": "check_flow",
-        "name": "Check channel connection.",
+        "name": "Check if a channel (email, whatsapp) is connected before trying to read from it.",
         "description": "Auto-generated workflow for check",
         "trigger": "check",
         "steps": [
@@ -835,7 +845,7 @@
       },
       {
         "id": "unread_flow",
-        "name": "Get unread emails for triage.",
+        "name": "Get unread emails from Gmail inbox. Include in triage as 'email' category.",
         "description": "Auto-generated workflow for unread",
         "trigger": "unread",
         "steps": [
@@ -846,7 +856,7 @@
       },
       {
         "id": "unread_flow",
-        "name": "Get unread WhatsApp for triage.",
+        "name": "Get unread WhatsApp messages. Include in triage as 'WhatsApp' category.",
         "description": "Auto-generated workflow for unread",
         "trigger": "unread",
         "steps": [
@@ -865,121 +875,121 @@
   "scenarios": [
     {
       "id": "list_notifications",
-      "title": "List notifications.",
+      "title": "List device notifications, optionally filtered to unread only.",
       "description": "Test scenario for list notifications",
       "steps": [
-        "User says: \"List notifications.\"",
-        "Agent calls device.notifications.list — list notifications.",
+        "User says: \"List device notifications, optionally filtered to unread only.\"",
+        "Agent calls device.notifications.list — list device notifications, optionally filtered to unread only.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for list notifications is handled successfully."
     },
     {
       "id": "group_notification",
-      "title": "Group notifications.",
+      "title": "Group notifications by app, sender, or priority for triage analysis.",
       "description": "Test scenario for group notification",
       "steps": [
-        "User says: \"Group notifications.\"",
-        "Agent calls device.notifications.group — group notifications.",
+        "User says: \"Group notifications by app, sender, or priority for triage analysis.\"",
+        "Agent calls device.notifications.group — group notifications by app, sender, or priority for triage analysis.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for group notification is handled successfully."
     },
     {
       "id": "dismiss_notification",
-      "title": "Dismiss notifications.",
+      "title": "Dismiss notifications by ID (single) or by app (batch). Dismissed notifications won't appear again.",
       "description": "Test scenario for dismiss notification",
       "steps": [
-        "User says: \"Dismiss notifications.\"",
-        "Agent calls device.notifications.dismiss — dismiss notifications.",
+        "User says: \"Dismiss notifications by ID (single) or by app (batch). Dismissed notifications won't appear again.\"",
+        "Agent calls device.notifications.dismiss — dismiss notifications by id (single) or by app (batch). dismissed notifications won't appear again.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for dismiss notification is handled successfully."
     },
     {
       "id": "get_dnd",
-      "title": "Get DND status.",
+      "title": "Get current Do Not Disturb status — enabled, schedule, and allowlist.",
       "description": "Test scenario for get dnd",
       "steps": [
-        "User says: \"Get DND status.\"",
-        "Agent calls device.dnd.get — get dnd status.",
+        "User says: \"Get current Do Not Disturb status — enabled, schedule, and allowlist.\"",
+        "Agent calls device.dnd.get — get current do not disturb status — enabled, schedule, and allowlist.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for get dnd is handled successfully."
     },
     {
       "id": "set_dnd",
-      "title": "Update DND settings.",
+      "title": "Update DND settings — toggle on/off, change schedule, update allowlist.",
       "description": "Test scenario for set dnd",
       "steps": [
-        "User says: \"Update DND settings.\"",
-        "Agent calls device.dnd.set — update dnd settings.",
+        "User says: \"Update DND settings — toggle on/off, change schedule, update allowlist.\"",
+        "Agent calls device.dnd.set — update dnd settings — toggle on/off, change schedule, update allowlist.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for set dnd is handled successfully."
     },
     {
       "id": "search_contact",
-      "title": "Search contacts for sender identification.",
+      "title": "Search contacts to identify sender relationships for priority classification.",
       "description": "Test scenario for search contact",
       "steps": [
-        "User says: \"Search contacts for sender identification.\"",
-        "Agent calls device.contacts.search — search contacts for sender identification.",
+        "User says: \"Search contacts to identify sender relationships for priority classification.\"",
+        "Agent calls device.contacts.search — search contacts to identify sender relationships for priority classification.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for search contact is handled successfully."
     },
     {
       "id": "recall",
-      "title": "Check notification preferences.",
+      "title": "Check user preferences for notification rules, quiet hours, and priority overrides.",
       "description": "Test scenario for recall",
       "steps": [
-        "User says: \"Check notification preferences.\"",
-        "Agent calls memory.recall — check notification preferences.",
+        "User says: \"Check user preferences for notification rules, quiet hours, and priority overrides.\"",
+        "Agent calls memory.recall — check user preferences for notification rules, quiet hours, and priority overrides.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for recall is handled successfully."
     },
     {
       "id": "read",
-      "title": "Read active situations.",
+      "title": "Read active situations — affects notification priority (e.g., in a meeting = suppress routine).",
       "description": "Test scenario for read",
       "steps": [
-        "User says: \"Read active situations.\"",
-        "Agent calls context.read — read active situations.",
+        "User says: \"Read active situations — affects notification priority (e.g., in a meeting = suppress routine).\"",
+        "Agent calls context.read — read active situations — affects notification priority (e.g., in a meeting = suppress routine).",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for read is handled successfully."
     },
     {
       "id": "check",
-      "title": "Check channel connection.",
+      "title": "Check if a channel (email, whatsapp) is connected before trying to read from it.",
       "description": "Test scenario for check",
       "steps": [
-        "User says: \"Check channel connection.\"",
-        "Agent calls integrations.check — check channel connection.",
+        "User says: \"Check if a channel (email, whatsapp) is connected before trying to read from it.\"",
+        "Agent calls integrations.check — check if a channel (email, whatsapp) is connected before trying to read from it.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for check is handled successfully."
     },
     {
       "id": "unread",
-      "title": "Get unread emails for triage.",
+      "title": "Get unread emails from Gmail inbox. Include in triage as 'email' category.",
       "description": "Test scenario for unread",
       "steps": [
-        "User says: \"Get unread emails for triage.\"",
-        "Agent calls email.unread — get unread emails for triage.",
+        "User says: \"Get unread emails from Gmail inbox. Include in triage as 'email' category.\"",
+        "Agent calls email.unread — get unread emails from gmail inbox. include in triage as 'email' category.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for unread is handled successfully."
     },
     {
       "id": "unread",
-      "title": "Get unread WhatsApp for triage.",
+      "title": "Get unread WhatsApp messages. Include in triage as 'WhatsApp' category.",
       "description": "Test scenario for unread",
       "steps": [
-        "User says: \"Get unread WhatsApp for triage.\"",
-        "Agent calls email.unread — get unread emails for triage.",
+        "User says: \"Get unread WhatsApp messages. Include in triage as 'WhatsApp' category.\"",
+        "Agent calls email.unread — get unread emails from gmail inbox. include in triage as 'email' category.",
         "Agent presents results to the user"
       ],
       "expected_outcome": "User request for unread is handled successfully."
@@ -987,16 +997,17 @@
   ],
   "role": {
     "name": "Notification Analyst",
-    "persona": "You are a notification triage specialist. Cut through noise and surface what matters.\n\nWhen checking notifications:\n1. Get all notifications\n2. Check unread emails and WhatsApp (if connected)\n3. Check DND status\n4. Cross-reference senders with contacts\n5. Check memory for notification preferences\n6. Check context for active situations\n\nClassify: URGENT (spouse, boss, parent), IMPORTANT (colleagues, family), ROUTINE (deliveries, updates), NOISE (promos).\n\nLead with urgent items. Be concise.",
+    "persona": "You are a notification triage specialist. Your job is to cut through the noise and surface what actually matters.\n\nWHEN ASKED TO CHECK NOTIFICATIONS:\n1. Get all notifications (device.notifications.list)\n2. Check for unread emails (email.unread) and WhatsApp messages (whatsapp.unread) — include these in triage\n3. Check DND status (device.dnd.get) — if DND is on, note which notifications break through\n4. Cross-reference senders with contacts (device.contacts.search) to understand relationships\n5. Check memory (memory.recall) for any notification preferences or rules\n6. Check context (context.read) for active situations that affect priority\n\nBefore using email or WhatsApp tools, check integrations.check to verify the channel is connected. If not connected, skip it silently — do NOT try to set it up (the messaging-agent handles setup).\n\nTRIAGE CLASSIFICATION:\n- URGENT: Messages from spouse/partner, boss, or parent marked high priority. Calendar alerts for events starting within 30 min.\n- IMPORTANT: Work messages from direct colleagues. Family group messages. Medium-priority notifications.\n- ROUTINE: Delivery updates, system updates, news that matches interests.\n- NOISE: Generic news, promotional content, low-priority system alerts.\n\nPRESENTATION:\n- Lead with urgent items — these need attention NOW\n- Group important items — 'You have 3 work messages from Slack'\n- Summarize routine — 'Also: Amazon delivery arriving by 5 PM, iOS update available'\n- Skip noise unless asked — don't mention it unless the user asks for everything\n\nDND MANAGEMENT:\n- When turning on DND, confirm the schedule and allowlist\n- Explain who can still reach them\n- When turning off, briefly mention what they missed\n\nDISMISSING:\n- When asked to dismiss, confirm what will be dismissed\n- Can dismiss by ID (single) or by app (batch)\n- Never dismiss urgent notifications without explicit confirmation\n\nBe concise. Users checking notifications want quick answers, not essays.",
     "goals": [
-      "Triage into urgency tiers",
-      "Surface VIP messages",
-      "Manage DND",
-      "Dismiss safely"
+      "Triage notifications into urgency tiers",
+      "Surface VIP messages from important contacts",
+      "Manage DND settings with clear confirmation",
+      "Dismiss notifications safely with confirmation"
     ],
     "limitations": [
-      "Cannot reply to notifications",
-      "Must confirm before dismissing urgent"
+      "Cannot reply to notifications — only read and dismiss",
+      "Cannot access notification content beyond what's shown",
+      "Must confirm before dismissing urgent notifications"
     ],
     "communication_style": {
       "tone": "warm",
