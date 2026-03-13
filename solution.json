@@ -2,7 +2,7 @@
   "id": "personal-adas",
   "name": "A-Team Personal Assistant",
   "version": "1.0.0",
-  "description": "Situation-aware personal assistant with proactive intelligence.",
+  "description": "Situation-aware personal assistant with proactive intelligence. Memory-first orchestrator detects situations (running late, meeting starting), checks taught rules, and routes to self-sufficient workers. Multi-channel messaging (SMS, email, WhatsApp) with proactive setup. Features: smart daily briefings, situation-aware messaging with ETA drafting, teach panel UI, integration gateway, and real device data sync.",
   "identity": {
     "actor_types": [
       {
@@ -12,18 +12,17 @@
         "default_channel": "voice"
       }
     ],
+    "default_actor_type": "owner",
     "admin_roles": [
       "owner"
-    ],
-    "default_actor_type": "owner",
-    "default_roles": []
+    ]
   },
   "skills": [
     {
       "id": "pa-orchestrator",
       "name": "PA Orchestrator",
       "role": "orchestrator",
-      "description": "Situation-aware brain",
+      "description": "Situation-aware brain — fuses signals, detects situations, checks taught rules, routes to workers. Handles simple queries and integration setup directly.",
       "entry_channels": [
         "voice",
         "api"
@@ -32,86 +31,78 @@
         "mobile-device-mcp",
         "email-mcp",
         "whatsapp-mcp",
-        "memory-mcp",
-        "personal-assistant-ui-mcp",
-        "handoff-controller-mcp"
+        "memory-mcp"
       ]
     },
     {
       "id": "life-manager",
       "name": "Life Manager",
       "role": "worker",
-      "description": "General life assistant",
+      "description": "General life assistant — calendar management, contacts, messaging, scheduling. Self-sufficient with all device tools.",
       "connectors": [
         "mobile-device-mcp",
-        "memory-mcp",
-        "personal-assistant-ui-mcp"
+        "memory-mcp"
       ]
     },
     {
       "id": "memory-keeper",
       "name": "Memory Keeper",
       "role": "worker",
-      "description": "Persistent memory",
+      "description": "Persistent memory — stores and recalls preferences, facts, instructions, and patterns across conversations.",
       "connectors": [
-        "memory-mcp",
-        "personal-assistant-ui-mcp"
+        "memory-mcp"
       ]
     },
     {
       "id": "daily-intel",
       "name": "Daily Intelligence",
       "role": "worker",
-      "description": "Proactive daily briefings",
+      "description": "Proactive daily briefings — analyzes calendar, unread emails/WhatsApp, birthdays, weather, commute. Cross-references preferences and rules.",
       "connectors": [
         "mobile-device-mcp",
         "email-mcp",
         "whatsapp-mcp",
-        "memory-mcp",
-        "personal-assistant-ui-mcp"
+        "memory-mcp"
       ]
     },
     {
       "id": "messaging-agent",
       "name": "Messaging Agent",
       "role": "worker",
-      "description": "Multi-channel communication specialist",
+      "description": "Multi-channel communication specialist — drafts and sends messages via SMS, email, and WhatsApp. Proactively detects when a channel isn't connected and guides setup inline.",
       "connectors": [
         "mobile-device-mcp",
         "email-mcp",
         "whatsapp-mcp",
-        "memory-mcp",
-        "personal-assistant-ui-mcp"
+        "memory-mcp"
       ]
     },
     {
       "id": "notification-triage",
       "name": "Notification Triage",
       "role": "worker",
-      "description": "Notification analyst",
+      "description": "Notification analyst — triages device notifications, unread emails, and WhatsApp messages. Cross-references contacts for VIP identification, manages DND, suppresses noise.",
       "connectors": [
         "mobile-device-mcp",
         "email-mcp",
         "whatsapp-mcp",
-        "memory-mcp",
-        "personal-assistant-ui-mcp"
+        "memory-mcp"
       ]
     },
     {
       "id": "teach-this",
       "name": "TeachThis",
       "role": "worker",
-      "description": "Teachability engine",
+      "description": "Teachability engine — interprets natural language instructions, corrections, and demonstrations into structured automation rules. Creates rules that the orchestrator matches before routing.",
       "connectors": [
-        "memory-mcp",
-        "personal-assistant-ui-mcp"
+        "memory-mcp"
       ]
     }
   ],
   "grants": [
     {
       "key": "pa.verified_user",
-      "description": "Proves voice verification",
+      "description": "Proves the caller passed voice verification (DOB security question). Required before accessing personal memory or daily intelligence.",
       "issued_by": [
         "pa-orchestrator"
       ],
@@ -131,7 +122,7 @@
       "id": "orchestrator-to-life-manager",
       "from": "pa-orchestrator",
       "to": "life-manager",
-      "trigger": "User needs life management",
+      "trigger": "User needs general life management: messaging, scheduling, contact lookup, or complex calendar questions.",
       "grants_passed": [
         "pa.verified_user"
       ],
@@ -142,7 +133,7 @@
       "id": "orchestrator-to-memory",
       "from": "pa-orchestrator",
       "to": "memory-keeper",
-      "trigger": "User wants memory operations",
+      "trigger": "User wants to store, recall, update, or delete memories.",
       "grants_passed": [
         "pa.verified_user"
       ],
@@ -153,7 +144,7 @@
       "id": "orchestrator-to-intel",
       "from": "pa-orchestrator",
       "to": "daily-intel",
-      "trigger": "User wants a daily briefing",
+      "trigger": "User wants a daily briefing or schedule analysis.",
       "grants_passed": [
         "pa.verified_user"
       ],
@@ -164,7 +155,7 @@
       "id": "orchestrator-to-messaging",
       "from": "pa-orchestrator",
       "to": "messaging-agent",
-      "trigger": "User wants to send a message",
+      "trigger": "User wants to send a message, text, email, or WhatsApp someone.",
       "grants_passed": [
         "pa.verified_user"
       ],
@@ -175,7 +166,7 @@
       "id": "orchestrator-to-notification-triage",
       "from": "pa-orchestrator",
       "to": "notification-triage",
-      "trigger": "User wants to check notifications",
+      "trigger": "User wants to check notifications, see what they missed, or manage DND.",
       "grants_passed": [
         "pa.verified_user"
       ],
@@ -186,7 +177,7 @@
       "id": "orchestrator-to-teach-this",
       "from": "pa-orchestrator",
       "to": "teach-this",
-      "trigger": "User wants to teach a behavior",
+      "trigger": "User wants to teach the PA a behavior, create an automation rule, manage existing rules, or correct a previous suggestion.",
       "grants_passed": [
         "pa.verified_user"
       ],
@@ -196,13 +187,16 @@
   ],
   "routing": {
     "voice": {
-      "default_skill": "pa-orchestrator"
+      "default_skill": "pa-orchestrator",
+      "description": "Voice interactions start at the orchestrator"
     },
     "chat": {
-      "default_skill": "pa-orchestrator"
+      "default_skill": "pa-orchestrator",
+      "description": "Chat/web/mobile interactions start at the orchestrator"
     },
     "api": {
-      "default_skill": "pa-orchestrator"
+      "default_skill": "pa-orchestrator",
+      "description": "API/web interactions start at the orchestrator"
     }
   },
   "platform_connectors": [
@@ -210,12 +204,14 @@
       "id": "mobile-device-mcp",
       "required": true,
       "ui_capable": true,
-      "description": "Platform device data connector"
-    },
-    {
-      "id": "handoff-controller-mcp",
-      "required": true,
-      "description": "Handoff Controller"
+      "description": "Platform device data connector — calendar, contacts, location, messaging, weather, commute, notifications, DND, battery, connectivity, integration registry, schedule UI.",
+      "used_by": [
+        "pa-orchestrator",
+        "life-manager",
+        "daily-intel",
+        "messaging-agent",
+        "notification-triage"
+      ]
     }
   ],
   "solution_connectors": [
@@ -223,22 +219,149 @@
       "id": "memory-mcp",
       "required": true,
       "ui_capable": true,
-      "description": "Dual-store + rule engine"
+      "description": "Dual-store + rule engine — long-term memory + ephemeral context + rule matching + teach panel UI",
+      "used_by": [
+        "pa-orchestrator",
+        "life-manager",
+        "memory-keeper",
+        "daily-intel",
+        "messaging-agent",
+        "notification-triage",
+        "teach-this"
+      ]
     },
     {
       "id": "email-mcp",
       "required": false,
-      "description": "Gmail connector"
+      "description": "Gmail connector — OAuth2 setup via chat, read/send/reply/search emails.",
+      "used_by": [
+        "pa-orchestrator",
+        "messaging-agent",
+        "notification-triage",
+        "daily-intel"
+      ]
     },
     {
       "id": "whatsapp-mcp",
       "required": false,
-      "description": "WhatsApp connector"
+      "description": "WhatsApp connector — Baileys-based, QR code auth. Send/receive/search WhatsApp messages.",
+      "used_by": [
+        "pa-orchestrator",
+        "messaging-agent",
+        "notification-triage",
+        "daily-intel"
+      ]
     },
     {
       "id": "personal-assistant-ui-mcp",
       "ui_capable": true,
-      "description": "Solution UI connector"
+      "description": "Solution-owned UI connector — serves PA dashboard and schedule panel as dynamically loaded plugins",
+      "used_by": [
+        "pa-orchestrator",
+        "life-manager",
+        "memory-keeper",
+        "daily-intel",
+        "messaging-agent",
+        "notification-triage",
+        "teach-this"
+      ]
+    }
+  ],
+  "security_contracts": [
+    {
+      "name": "Life manager requires verified user",
+      "consumer": "life-manager",
+      "provider": "pa-orchestrator",
+      "requires_grants": [
+        "pa.verified_user"
+      ],
+      "for_tools": [
+        "device.calendar.create",
+        "device.message.send",
+        "memory.recall"
+      ],
+      "validation": "User must be verified before accessing life management tools"
+    },
+    {
+      "name": "Memory access requires verified user",
+      "consumer": "memory-keeper",
+      "provider": "pa-orchestrator",
+      "requires_grants": [
+        "pa.verified_user"
+      ],
+      "for_tools": [
+        "memory.store",
+        "memory.recall",
+        "memory.list",
+        "memory.update",
+        "memory.delete"
+      ],
+      "validation": "User must be verified before accessing persistent memory"
+    },
+    {
+      "name": "Daily intelligence requires verified user",
+      "consumer": "daily-intel",
+      "provider": "pa-orchestrator",
+      "requires_grants": [
+        "pa.verified_user"
+      ],
+      "for_tools": [
+        "device.calendar.today",
+        "device.calendar.upcoming",
+        "device.contacts.search",
+        "memory.recall"
+      ],
+      "validation": "User must be verified before generating daily briefings"
+    },
+    {
+      "name": "Messaging requires verified user",
+      "consumer": "messaging-agent",
+      "provider": "pa-orchestrator",
+      "requires_grants": [
+        "pa.verified_user"
+      ],
+      "for_tools": [
+        "device.contacts.search",
+        "device.contacts.get",
+        "device.message.send",
+        "memory.recall"
+      ],
+      "validation": "User must be verified before sending messages"
+    },
+    {
+      "name": "Notification triage requires verified user",
+      "consumer": "notification-triage",
+      "provider": "pa-orchestrator",
+      "requires_grants": [
+        "pa.verified_user"
+      ],
+      "for_tools": [
+        "device.notifications.list",
+        "device.notifications.group",
+        "device.notifications.dismiss",
+        "device.dnd.get",
+        "device.dnd.set",
+        "memory.recall"
+      ],
+      "validation": "User must be verified before accessing notifications"
+    },
+    {
+      "name": "Teachability requires verified user",
+      "consumer": "teach-this",
+      "provider": "pa-orchestrator",
+      "requires_grants": [
+        "pa.verified_user"
+      ],
+      "for_tools": [
+        "memory.store",
+        "memory.recall",
+        "memory.list",
+        "memory.update",
+        "memory.delete",
+        "memory.rules.match",
+        "memory.rules.count"
+      ],
+      "validation": "User must be verified before teaching rules or managing automations"
     }
   ],
   "voice": {
@@ -250,8 +373,8 @@
     },
     "welcome": "Hey! It's A-Team. What can I help you with?",
     "prompt": {
-      "behaviorRules": "You are A-Team. Send every user message to pa-orchestrator via send_message_to_skill.",
-      "informationGathering": "Confirm before sending messages."
+      "behaviorRules": "You are A-Team, a situation-aware personal assistant. Your brain is the PA Orchestrator.\n\nROUTING — the orchestrator handles all routing. Send every user message to the orchestrator via send_message_to_skill targeting 'pa-orchestrator'. The orchestrator will:\n1. Assess the situation (calendar + location + time + weather)\n2. Check taught rules in memory\n3. Either answer directly or route to the right worker skill\n\nDo NOT try to route to individual skills yourself — the orchestrator decides.",
+      "informationGathering": "Confirm message content before sending. Confirm scheduling details."
     },
     "verification": {
       "enabled": true,
@@ -266,5 +389,5 @@
       "skipRecentMinutes": 30
     }
   },
-  "security_contracts": []
+  "functional_connectors": []
 }

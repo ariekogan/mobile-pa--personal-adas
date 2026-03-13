@@ -1,84 +1,95 @@
 {
   "id": "teach-this",
   "name": "TeachThis",
+  "description": "Users need to teach their PA behaviors through natural language.",
   "version": "1.0.0",
   "phase": "DEPLOYED",
+  "ui_capable": false,
+  "connectors": [
+    "memory-mcp"
+  ],
   "problem": {
-    "statement": "Users need to teach their PA behaviors through natural language — instructions, corrections, and demonstrations — that get stored as structured rules the system can act on.",
-    "context": "Teachability worker skill that interprets natural language teaching into structured rules with triggers, conditions, and actions. Rules are stored in memory-mcp and matched by the orchestrator before routing decisions.",
+    "statement": "Users need to teach their PA behaviors through natural language.",
+    "context": "Teachability worker skill that interprets instructions into structured rules.",
     "goals": [
-      "Interpret natural language instructions into structured automation rules",
-      "Extract preference deltas from user corrections to previous suggestions",
-      "Convert demonstrated patterns into reusable rules with context bindings",
-      "Always confirm extracted rules with the user before storing",
-      "Support enabling, disabling, updating, and deleting taught rules"
+      "Interpret instructions into rules",
+      "Extract preference deltas from corrections",
+      "Convert demonstrated patterns into rules",
+      "Confirm before storing",
+      "Support rule management"
     ]
-  },
-  "role": {
-    "name": "Teaching Interpreter",
-    "persona": "You are the teachability engine for a personal assistant. Users teach you by giving instructions, correcting your behavior, or demonstrating what they want. Your job is to interpret these into STRUCTURED RULES that the system can match and act on automatically.\n\nTHREE TEACHING MODES:\n\n1. INSTRUCTION MODE — User says 'when X, do Y':\n   - 'When my boss calls, always ring through' → extract trigger, condition, action\n   - 'Never schedule meetings before 10am' → extract time-based rule\n   - 'Always send Sarah a heads up if I'm running late' → extract situation-bound rule\n   Parse into structured rule JSON with trigger, conditions, action, and description.\n\n2. CORRECTION MODE — User edits or rejects a suggestion:\n   - 'That message was too formal, make it more casual for David' → extract tone preference for contact\n   - 'No, I prefer to handle that myself' → extract autonomy preference\n   - 'Actually, use my work email for that' → extract channel preference\n   Extract the delta between what was suggested and what the user wanted, then store as a rule.\n\n3. DEMONSTRATION MODE — User says 'I just did X, teach that':\n   - 'I just silenced notifications because I'm in a meeting. Teach that.' → extract pattern\n   - 'I always check weather before leaving. Remember that.' → extract routine\n   Extract the pattern, ask clarifying questions about when it applies, then store as a rule.\n\nRULE STRUCTURE — every rule you create MUST be stored as a JSON string with these fields:\n- trigger: what activates this rule (e.g., 'call from boss', 'meeting starting', 'morning routine')\n- trigger_type: category — situation, event, keyword, time, or contact\n- conditions: optional array of specific conditions [{field, op, value}]\n- action: what to do (e.g., 'ring_always', 'suppress_notifications', 'send_eta_message')\n- action_type: category — route, respond, configure, or notify\n- confidence: start at 0.8 for clear instructions, 0.6 for demonstrations\n- active: true\n- created_from: instruction, correction, or demonstration\n- description: human-readable explanation\n\nWhen storing, use type='rule' and include relevant tags for matching: contact names, situation types, time of day, actions.\n\nALWAYS:\n1. Parse the user's intent\n2. Check for conflicting existing rules (memory.rules.match or memory.recall with type='rule')\n3. Draft the structured rule\n4. Show it to the user in plain language: 'I understood this as: When [trigger], then [action]. Is that right?'\n5. Only store after user confirms\n6. If unclear, ask clarifying questions\n\nRULE MANAGEMENT:\n- List rules: use memory.list with type='rule'\n- Update rules: use memory.update to change content JSON\n- Delete rules: use memory.delete\n- Disable: update the rule JSON with active=false\n- Search rules: use memory.recall with type='rule'\n\nCONFLICTS:\nIf a new rule conflicts with an existing one, tell the user:\n'You have an existing rule: [old rule]. This new one would conflict. Which should I keep?'",
-    "goals": [
-      "Interpret natural language teaching into structured rules",
-      "Confirm every rule with the user before storing",
-      "Handle all three teaching modes: instruction, correction, demonstration",
-      "Manage existing rules: list, update, disable, delete",
-      "Detect and resolve rule conflicts"
-    ],
-    "limitations": [
-      "Cannot access device tools directly — only memory tools",
-      "Cannot execute rules — only creates them for the orchestrator to match",
-      "Must confirm every rule before storing"
-    ],
-    "communication_style": {
-      "tone": "warm",
-      "verbosity": "concise"
-    }
   },
   "tools": [
     {
       "id": "tool-teach-store",
+      "id_status": "permanent",
       "name": "memory.store",
-      "description": "Store a new taught rule. Use type='rule' and content as structured JSON string with trigger, conditions, action, etc. Include relevant tags for matching.",
+      "description": "Store a new rule.",
       "inputs": [
         {
           "name": "type",
           "type": "string",
           "required": true,
-          "description": "Always 'rule' for taught rules"
+          "description": "Always 'rule'"
         },
         {
           "name": "content",
           "type": "string",
           "required": true,
-          "description": "Structured rule JSON: {trigger, trigger_type, conditions, action, action_type, confidence, active, created_from, description}"
+          "description": "Structured rule JSON"
         },
         {
           "name": "tags",
           "type": "array",
           "required": false,
-          "description": "Tags for matching: contact names, situation types, keywords"
+          "description": "Tags for matching"
         },
         {
           "name": "context",
           "type": "string",
           "required": false,
-          "description": "Context about when/why this rule was taught"
+          "description": "Context"
         }
       ],
       "output": {
         "type": "object",
-        "description": "Stored rule confirmation with memory ID"
+        "description": "Stored rule confirmation"
       },
       "source": {
         "type": "mcp_bridge",
         "connection_id": "memory-mcp",
         "mcp_tool": "memory.store"
+      },
+      "policy": {
+        "allowed": "always"
+      },
+      "mock": {
+        "enabled": true,
+        "mode": "examples",
+        "examples": [
+          {
+            "id": "tool-memory-store-auto",
+            "input": {
+              "type": "standard",
+              "content": "example"
+            },
+            "output": {
+              "success": true,
+              "data": {}
+            },
+            "description": "Auto-generated example for memory.store"
+          }
+        ]
+      },
+      "security": {
+        "classification": "public"
       }
     },
     {
       "id": "tool-teach-recall",
+      "id_status": "permanent",
       "name": "memory.recall",
-      "description": "Search existing rules and memories. Use to check for conflicts before creating a new rule.",
+      "description": "Search existing rules.",
       "inputs": [
         {
           "name": "query",
@@ -90,7 +101,7 @@
           "name": "type",
           "type": "string",
           "required": false,
-          "description": "Filter: 'rule' for taught rules, or preference/fact/instruction"
+          "description": "Filter: 'rule'"
         },
         {
           "name": "limit",
@@ -107,18 +118,47 @@
         "type": "mcp_bridge",
         "connection_id": "memory-mcp",
         "mcp_tool": "memory.recall"
+      },
+      "policy": {
+        "allowed": "always"
+      },
+      "mock": {
+        "enabled": true,
+        "mode": "examples",
+        "examples": [
+          {
+            "id": "tool-memory-recall-auto",
+            "input": {
+              "query": "search term"
+            },
+            "output": {
+              "results": [
+                {
+                  "id": 1,
+                  "name": "Example item"
+                }
+              ],
+              "total_count": 1
+            },
+            "description": "Auto-generated example for memory.recall"
+          }
+        ]
+      },
+      "security": {
+        "classification": "public"
       }
     },
     {
       "id": "tool-teach-list",
+      "id_status": "permanent",
       "name": "memory.list",
-      "description": "List all taught rules. Use type='rule' to see all rules.",
+      "description": "List all rules.",
       "inputs": [
         {
           "name": "type",
           "type": "string",
           "required": false,
-          "description": "Filter by type (use 'rule' for taught rules)"
+          "description": "Filter"
         },
         {
           "name": "limit",
@@ -130,35 +170,62 @@
           "name": "offset",
           "type": "number",
           "required": false,
-          "description": "Pagination offset"
+          "description": "Offset"
         }
       ],
       "output": {
         "type": "object",
-        "description": "List of rules with pagination"
+        "description": "List of rules"
       },
       "source": {
         "type": "mcp_bridge",
         "connection_id": "memory-mcp",
         "mcp_tool": "memory.list"
+      },
+      "policy": {
+        "allowed": "always"
+      },
+      "mock": {
+        "enabled": true,
+        "mode": "examples",
+        "examples": [
+          {
+            "id": "tool-memory-list-auto",
+            "input": {},
+            "output": {
+              "results": [
+                {
+                  "id": 1,
+                  "name": "Example item"
+                }
+              ],
+              "total_count": 1
+            },
+            "description": "Auto-generated example for memory.list"
+          }
+        ]
+      },
+      "security": {
+        "classification": "public"
       }
     },
     {
       "id": "tool-teach-update",
+      "id_status": "permanent",
       "name": "memory.update",
-      "description": "Update an existing rule by ID. Use to modify, enable, or disable a rule.",
+      "description": "Update a rule.",
       "inputs": [
         {
           "name": "id",
           "type": "number",
           "required": true,
-          "description": "Rule memory ID"
+          "description": "Rule ID"
         },
         {
           "name": "content",
           "type": "string",
           "required": false,
-          "description": "Updated rule JSON"
+          "description": "Updated JSON"
         },
         {
           "name": "tags",
@@ -181,18 +248,43 @@
         "type": "mcp_bridge",
         "connection_id": "memory-mcp",
         "mcp_tool": "memory.update"
+      },
+      "policy": {
+        "allowed": "always"
+      },
+      "mock": {
+        "enabled": true,
+        "mode": "examples",
+        "examples": [
+          {
+            "id": "tool-memory-update-auto",
+            "input": {
+              "id": 1
+            },
+            "output": {
+              "id": 1,
+              "status": "updated",
+              "message": "Updated successfully."
+            },
+            "description": "Auto-generated example for memory.update"
+          }
+        ]
+      },
+      "security": {
+        "classification": "public"
       }
     },
     {
       "id": "tool-teach-delete",
+      "id_status": "permanent",
       "name": "memory.delete",
-      "description": "Delete a taught rule by ID. Use when user says 'forget that rule' or 'remove that automation'.",
+      "description": "Delete a rule.",
       "inputs": [
         {
           "name": "id",
           "type": "number",
           "required": true,
-          "description": "Rule memory ID to delete"
+          "description": "Rule ID"
         }
       ],
       "output": {
@@ -203,18 +295,42 @@
         "type": "mcp_bridge",
         "connection_id": "memory-mcp",
         "mcp_tool": "memory.delete"
+      },
+      "policy": {
+        "allowed": "always"
+      },
+      "mock": {
+        "enabled": true,
+        "mode": "examples",
+        "examples": [
+          {
+            "id": "tool-memory-delete-auto",
+            "input": {
+              "id": 1
+            },
+            "output": {
+              "success": true,
+              "message": "Operation completed successfully."
+            },
+            "description": "Auto-generated example for memory.delete"
+          }
+        ]
+      },
+      "security": {
+        "classification": "public"
       }
     },
     {
       "id": "tool-teach-rules-match",
+      "id_status": "permanent",
       "name": "memory.rules.match",
-      "description": "Check for existing rules that match a situation. Use to detect conflicts before creating a new rule.",
+      "description": "Check for conflicting rules.",
       "inputs": [
         {
           "name": "situation",
           "type": "string",
           "required": true,
-          "description": "Situation description to match against"
+          "description": "Situation to match"
         },
         {
           "name": "limit",
@@ -225,34 +341,401 @@
       ],
       "output": {
         "type": "object",
-        "description": "Matching rules with relevance scores"
+        "description": "Matching rules"
       },
       "source": {
         "type": "mcp_bridge",
         "connection_id": "memory-mcp",
         "mcp_tool": "memory.rules.match"
+      },
+      "policy": {
+        "allowed": "always"
+      },
+      "mock": {
+        "enabled": true,
+        "mode": "examples",
+        "examples": [
+          {
+            "id": "tool-rules-match-auto",
+            "input": {
+              "situation": "example"
+            },
+            "output": {
+              "success": true,
+              "data": {}
+            },
+            "description": "Auto-generated example for memory.rules.match"
+          }
+        ]
+      },
+      "security": {
+        "classification": "public"
       }
     },
     {
       "id": "tool-teach-rules-count",
+      "id_status": "permanent",
       "name": "memory.rules.count",
-      "description": "Count total taught rules — active and inactive.",
+      "description": "Count taught rules.",
       "inputs": [],
       "output": {
         "type": "object",
-        "description": "Rule counts: total, active, inactive"
+        "description": "Rule counts"
       },
       "source": {
         "type": "mcp_bridge",
         "connection_id": "memory-mcp",
         "mcp_tool": "memory.rules.count"
+      },
+      "policy": {
+        "allowed": "always"
+      },
+      "mock": {
+        "enabled": true,
+        "mode": "examples",
+        "examples": [
+          {
+            "id": "tool-rules-count-auto",
+            "input": {},
+            "output": {
+              "success": true,
+              "data": {}
+            },
+            "description": "Auto-generated example for memory.rules.count"
+          }
+        ]
+      },
+      "security": {
+        "classification": "public"
       }
     }
   ],
-  "connectors": [
-    "memory-mcp",
-    "personal-assistant-ui-mcp"
+  "intents": {
+    "supported": [
+      {
+        "id": "store",
+        "description": "Store a new rule.",
+        "examples": [
+          "Store a new rule.",
+          "I need to store a new rule.",
+          "Can you store a new rule.?",
+          "Please store a new rule."
+        ],
+        "maps_to_workflow": "store_flow",
+        "entities": [
+          {
+            "name": "type",
+            "type": "string",
+            "required": false,
+            "extract_from": "message"
+          },
+          {
+            "name": "content",
+            "type": "string",
+            "required": false,
+            "extract_from": "message"
+          }
+        ]
+      },
+      {
+        "id": "recall",
+        "description": "Search existing rules.",
+        "examples": [
+          "Search existing rules.",
+          "I need to search existing rules.",
+          "Can you search existing rules.?",
+          "Please search existing rules."
+        ],
+        "maps_to_workflow": "recall_flow",
+        "entities": [
+          {
+            "name": "query",
+            "type": "string",
+            "required": false,
+            "extract_from": "message"
+          }
+        ]
+      },
+      {
+        "id": "list",
+        "description": "List all rules.",
+        "examples": [
+          "List all rules.",
+          "I need to list all rules.",
+          "Can you list all rules.?",
+          "Please list all rules."
+        ],
+        "maps_to_workflow": "list_flow"
+      },
+      {
+        "id": "update",
+        "description": "Update a rule.",
+        "examples": [
+          "Update a rule.",
+          "I need to update a rule.",
+          "Can you update a rule.?",
+          "Please update a rule."
+        ],
+        "maps_to_workflow": "update_flow",
+        "entities": [
+          {
+            "name": "id",
+            "type": "number",
+            "required": false,
+            "extract_from": "message"
+          }
+        ]
+      },
+      {
+        "id": "delete",
+        "description": "Delete a rule.",
+        "examples": [
+          "Delete a rule.",
+          "I need to delete a rule.",
+          "Can you delete a rule.?",
+          "Please delete a rule."
+        ],
+        "maps_to_workflow": "delete_flow",
+        "entities": [
+          {
+            "name": "id",
+            "type": "number",
+            "required": false,
+            "extract_from": "message"
+          }
+        ]
+      },
+      {
+        "id": "match_rule",
+        "description": "Check for conflicting rules.",
+        "examples": [
+          "Check for conflicting rules.",
+          "I need to check for conflicting rules.",
+          "Can you check for conflicting rules.?",
+          "Please check for conflicting rules."
+        ],
+        "maps_to_workflow": "match_rule_flow",
+        "entities": [
+          {
+            "name": "situation",
+            "type": "string",
+            "required": false,
+            "extract_from": "message"
+          }
+        ]
+      },
+      {
+        "id": "count_rule",
+        "description": "Count taught rules.",
+        "examples": [
+          "Count taught rules.",
+          "I need to count taught rules.",
+          "Can you count taught rules.?",
+          "Please count taught rules."
+        ],
+        "maps_to_workflow": "count_rule_flow"
+      }
+    ],
+    "thresholds": {
+      "accept": 0.85,
+      "clarify": 0.6,
+      "reject": 0.4
+    },
+    "out_of_domain": {
+      "action": "redirect",
+      "message": "This request is outside my capabilities.",
+      "suggest_domains": []
+    }
+  },
+  "policy": {
+    "guardrails": {
+      "never": [],
+      "always": []
+    },
+    "workflows": [
+      {
+        "id": "store_flow",
+        "name": "Store a new rule.",
+        "description": "Auto-generated workflow for store",
+        "trigger": "store",
+        "steps": [
+          "memory.store"
+        ],
+        "required": false,
+        "on_deviation": "warn"
+      },
+      {
+        "id": "recall_flow",
+        "name": "Search existing rules.",
+        "description": "Auto-generated workflow for recall",
+        "trigger": "recall",
+        "steps": [
+          "memory.recall"
+        ],
+        "required": false,
+        "on_deviation": "warn"
+      },
+      {
+        "id": "list_flow",
+        "name": "List all rules.",
+        "description": "Auto-generated workflow for list",
+        "trigger": "list",
+        "steps": [
+          "memory.list"
+        ],
+        "required": false,
+        "on_deviation": "warn"
+      },
+      {
+        "id": "update_flow",
+        "name": "Update a rule.",
+        "description": "Auto-generated workflow for update",
+        "trigger": "update",
+        "steps": [
+          "memory.update"
+        ],
+        "required": false,
+        "on_deviation": "warn"
+      },
+      {
+        "id": "delete_flow",
+        "name": "Delete a rule.",
+        "description": "Auto-generated workflow for delete",
+        "trigger": "delete",
+        "steps": [
+          "memory.delete"
+        ],
+        "required": false,
+        "on_deviation": "warn"
+      },
+      {
+        "id": "match_rule_flow",
+        "name": "Check for conflicting rules.",
+        "description": "Auto-generated workflow for match_rule",
+        "trigger": "match_rule",
+        "steps": [
+          "memory.rules.match"
+        ],
+        "required": false,
+        "on_deviation": "warn"
+      },
+      {
+        "id": "count_rule_flow",
+        "name": "Count taught rules.",
+        "description": "Auto-generated workflow for count_rule",
+        "trigger": "count_rule",
+        "steps": [
+          "memory.rules.count"
+        ],
+        "required": false,
+        "on_deviation": "warn"
+      }
+    ],
+    "approvals": [],
+    "escalation": {
+      "enabled": false,
+      "conditions": []
+    }
+  },
+  "scenarios": [
+    {
+      "id": "store",
+      "title": "Store a new rule.",
+      "description": "Test scenario for store",
+      "steps": [
+        "User says: \"Store a new rule.\"",
+        "Agent calls memory.store — store a new rule.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for store is handled successfully."
+    },
+    {
+      "id": "recall",
+      "title": "Search existing rules.",
+      "description": "Test scenario for recall",
+      "steps": [
+        "User says: \"Search existing rules.\"",
+        "Agent calls memory.recall — search existing rules.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for recall is handled successfully."
+    },
+    {
+      "id": "list",
+      "title": "List all rules.",
+      "description": "Test scenario for list",
+      "steps": [
+        "User says: \"List all rules.\"",
+        "Agent calls memory.list — list all rules.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for list is handled successfully."
+    },
+    {
+      "id": "update",
+      "title": "Update a rule.",
+      "description": "Test scenario for update",
+      "steps": [
+        "User says: \"Update a rule.\"",
+        "Agent calls memory.update — update a rule.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for update is handled successfully."
+    },
+    {
+      "id": "delete",
+      "title": "Delete a rule.",
+      "description": "Test scenario for delete",
+      "steps": [
+        "User says: \"Delete a rule.\"",
+        "Agent calls memory.delete — delete a rule.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for delete is handled successfully."
+    },
+    {
+      "id": "match_rule",
+      "title": "Check for conflicting rules.",
+      "description": "Test scenario for match rule",
+      "steps": [
+        "User says: \"Check for conflicting rules.\"",
+        "Agent calls memory.rules.match — check for conflicting rules.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for match rule is handled successfully."
+    },
+    {
+      "id": "count_rule",
+      "title": "Count taught rules.",
+      "description": "Test scenario for count rule",
+      "steps": [
+        "User says: \"Count taught rules.\"",
+        "Agent calls memory.rules.count — count taught rules.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for count rule is handled successfully."
+    }
   ],
+  "role": {
+    "name": "Teaching Interpreter",
+    "persona": "You are the teachability engine. Users teach you by giving instructions, correcting behavior, or demonstrating. You interpret these into STRUCTURED RULES.\n\nThree modes: INSTRUCTION (when X do Y), CORRECTION (that was too formal), DEMONSTRATION (I just did X, teach that).\n\nEvery rule has: trigger, trigger_type, conditions, action, action_type, confidence, active, created_from, description.\n\nAlways: 1. Parse intent 2. Check conflicts 3. Draft rule 4. Confirm with user 5. Store after approval.",
+    "goals": [
+      "Interpret teaching into structured rules",
+      "Confirm every rule before storing",
+      "Handle instruction, correction, demonstration modes",
+      "Manage existing rules",
+      "Detect conflicts"
+    ],
+    "limitations": [
+      "Only memory tools",
+      "Cannot execute rules — only creates them",
+      "Must confirm every rule"
+    ],
+    "communication_style": {
+      "tone": "warm",
+      "verbosity": "concise"
+    }
+  },
   "engine": {
     "model": "claude-sonnet",
     "temperature": 0.5,
@@ -274,25 +757,6 @@
       }
     ]
   },
-  "intents": {
-    "supported": [
-      {
-        "id": "i1",
-        "description": "Default",
-        "examples": [
-          "help"
-        ]
-      }
-    ]
-  },
-  "scenarios": [
-    {
-      "id": "s1",
-      "title": "Test",
-      "steps": [
-        "test"
-      ],
-      "expected_outcome": "ok"
-    }
-  ]
+  "response_filters": [],
+  "triggers": []
 }

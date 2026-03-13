@@ -1,42 +1,33 @@
 {
   "id": "daily-intel",
   "name": "Daily Intelligence",
+  "description": "Users need a proactive daily briefing that doesn't just list events but analyzes their day intelligently.",
   "version": "1.1.0",
   "phase": "DEPLOYED",
+  "ui_capable": false,
+  "connectors": [
+    "mobile-device-mcp",
+    "email-mcp",
+    "whatsapp-mcp",
+    "memory-mcp"
+  ],
   "problem": {
     "statement": "Users need a proactive daily briefing that doesn't just list events but analyzes their day intelligently.",
-    "context": "Proactive daily intelligence worker skill that analyzes calendar events, contacts, and stored preferences to generate smart briefings with conflict detection, travel time warnings, birthday reminders, and personalized insights.",
+    "context": "Proactive daily intelligence worker skill that analyzes calendar, contacts, preferences for smart briefings.",
     "goals": [
-      "Generate smart morning briefings with calendar analysis",
-      "Detect scheduling conflicts and tight transitions",
-      "Remind about upcoming birthdays and important dates from contacts",
-      "Check user preferences and flag violations (e.g., meeting before 10am when user prefers no early meetings)",
-      "Provide actionable insights, not just event lists"
+      "Generate smart morning briefings",
+      "Detect scheduling conflicts",
+      "Remind about birthdays",
+      "Check preferences and flag violations",
+      "Provide actionable insights"
     ]
-  },
-  "role": {
-    "name": "Daily Intelligence Analyst",
-    "persona": "You are a proactive daily intelligence analyst. You don't just list the user's schedule — you ANALYZE it.\n\nCONTEXT FROM ORCHESTRATOR:\nThe orchestrator may pass context in the handoff summary — preferences, rules, or specific requests. Check it and factor it in.\n\nWhen generating a briefing, gather ALL data first (call in parallel where possible):\n1. Get today's calendar events\n2. Get upcoming events (next 2-3 days)\n3. Get current weather + forecast\n4. Check for unread emails (email.unread) and WhatsApp messages (whatsapp.unread) — use integrations.check first to see if connected, skip silently if not\n5. Check user's stored preferences (memory.recall with queries like 'schedule preferences', 'meeting preferences', 'morning routine')\n5. Check taught rules (memory.rules.match with situation 'daily briefing morning routine') — user may have taught rules like 'never schedule before 10am' or 'remind me about medications'\n6. Check upcoming birthdays from contacts\n7. Check last contact dates for close relationships (device.contacts.lastContact for family/friends) — flag if user hasn't talked to someone important in >10 days\n8. Estimate commute times between events with different locations\n\nThen analyze for:\n- RULE VIOLATIONS: If taught rules conflict with today's schedule, flag them prominently. Example: user has rule 'no meetings before 10am' but there's a 9am standup → 'Heads up: You have a 9am meeting, but your rule says no meetings before 10am.'\n- Weather impact: Rain? Suggest umbrella. Hot outdoor event?\n- Schedule conflicts or back-to-back meetings with no buffer\n- Tight transitions: commute estimates vs available time between events\n- Birthday reminders (today and upcoming week)\n- Relationship care: 'You haven't talked to David in 14 days — want to reach out?'\n- Important upcoming events (anniversaries, appointments)\n- Commute advice: 'Leave by X:XX to make your Y:00 meeting'\n\nPresent findings as a structured briefing:\n1. Weather summary (one line)\n2. Key alerts (rule violations, conflicts, birthdays, travel warnings, relationship nudges)\n3. Today's schedule with commute notes\n4. Look-ahead (next 2-3 days highlights)\n\nBe proactive — suggest actions when appropriate. Keep it concise but insightful.",
-    "goals": [
-      "Analyze calendar for conflicts, gaps, and transition issues",
-      "Cross-reference contacts for birthdays and important dates",
-      "Check preferences to flag violations",
-      "Generate actionable insights, not just event dumps"
-    ],
-    "limitations": [
-      "Cannot create events or send messages — only analyze and advise",
-      "Can check unread emails and WhatsApp messages for briefing summaries"
-    ],
-    "communication_style": {
-      "tone": "warm",
-      "verbosity": "detailed"
-    }
   },
   "tools": [
     {
       "id": "tool-intel-cal-today",
+      "id_status": "permanent",
       "name": "device.calendar.today",
-      "description": "Get all calendar events for today.",
+      "description": "Get today's events.",
       "inputs": [],
       "output": {
         "type": "object",
@@ -46,18 +37,40 @@
         "type": "mcp_bridge",
         "connection_id": "mobile-device-mcp",
         "mcp_tool": "device.calendar.today"
+      },
+      "policy": {
+        "allowed": "always"
+      },
+      "mock": {
+        "enabled": true,
+        "mode": "examples",
+        "examples": [
+          {
+            "id": "tool-calendar-today-auto",
+            "input": {},
+            "output": {
+              "success": true,
+              "data": {}
+            },
+            "description": "Auto-generated example for device.calendar.today"
+          }
+        ]
+      },
+      "security": {
+        "classification": "public"
       }
     },
     {
       "id": "tool-intel-cal-upcoming",
+      "id_status": "permanent",
       "name": "device.calendar.upcoming",
-      "description": "Get upcoming calendar events for the next N days.",
+      "description": "Get upcoming events.",
       "inputs": [
         {
           "name": "days",
           "type": "number",
           "required": false,
-          "description": "Days ahead (default 3)"
+          "description": "Days ahead"
         }
       ],
       "output": {
@@ -68,12 +81,34 @@
         "type": "mcp_bridge",
         "connection_id": "mobile-device-mcp",
         "mcp_tool": "device.calendar.upcoming"
+      },
+      "policy": {
+        "allowed": "always"
+      },
+      "mock": {
+        "enabled": true,
+        "mode": "examples",
+        "examples": [
+          {
+            "id": "tool-calendar-upcoming-auto",
+            "input": {},
+            "output": {
+              "success": true,
+              "data": {}
+            },
+            "description": "Auto-generated example for device.calendar.upcoming"
+          }
+        ]
+      },
+      "security": {
+        "classification": "public"
       }
     },
     {
       "id": "tool-intel-contacts-search",
+      "id_status": "permanent",
       "name": "device.contacts.search",
-      "description": "Search contacts by name, relationship, or keyword. Use to find birthdays and important dates.",
+      "description": "Search contacts for birthdays.",
       "inputs": [
         {
           "name": "query",
@@ -90,12 +125,41 @@
         "type": "mcp_bridge",
         "connection_id": "mobile-device-mcp",
         "mcp_tool": "device.contacts.search"
+      },
+      "policy": {
+        "allowed": "always"
+      },
+      "mock": {
+        "enabled": true,
+        "mode": "examples",
+        "examples": [
+          {
+            "id": "tool-contacts-search-auto",
+            "input": {
+              "query": "search term"
+            },
+            "output": {
+              "results": [
+                {
+                  "id": 1,
+                  "name": "Example item"
+                }
+              ],
+              "total_count": 1
+            },
+            "description": "Auto-generated example for device.contacts.search"
+          }
+        ]
+      },
+      "security": {
+        "classification": "public"
       }
     },
     {
       "id": "tool-intel-location",
+      "id_status": "permanent",
       "name": "device.location.current",
-      "description": "Get user's current location for commute/travel estimates.",
+      "description": "Get current location.",
       "inputs": [],
       "output": {
         "type": "object",
@@ -105,12 +169,34 @@
         "type": "mcp_bridge",
         "connection_id": "mobile-device-mcp",
         "mcp_tool": "device.location.current"
+      },
+      "policy": {
+        "allowed": "always"
+      },
+      "mock": {
+        "enabled": true,
+        "mode": "examples",
+        "examples": [
+          {
+            "id": "tool-location-current-auto",
+            "input": {},
+            "output": {
+              "success": true,
+              "data": {}
+            },
+            "description": "Auto-generated example for device.location.current"
+          }
+        ]
+      },
+      "security": {
+        "classification": "public"
       }
     },
     {
       "id": "tool-intel-recall",
+      "id_status": "permanent",
       "name": "memory.recall",
-      "description": "Recall user preferences and stored memories to personalize the briefing.",
+      "description": "Recall preferences for briefing.",
       "inputs": [
         {
           "name": "query",
@@ -122,7 +208,7 @@
           "name": "type",
           "type": "string",
           "required": false,
-          "description": "Filter: preference, fact, instruction"
+          "description": "Filter"
         },
         {
           "name": "limit",
@@ -139,133 +225,272 @@
         "type": "mcp_bridge",
         "connection_id": "memory-mcp",
         "mcp_tool": "memory.recall"
+      },
+      "policy": {
+        "allowed": "always"
+      },
+      "mock": {
+        "enabled": true,
+        "mode": "examples",
+        "examples": [
+          {
+            "id": "tool-memory-recall-auto",
+            "input": {
+              "query": "search term"
+            },
+            "output": {
+              "success": true,
+              "data": {}
+            },
+            "description": "Auto-generated example for memory.recall"
+          }
+        ]
+      },
+      "security": {
+        "classification": "public"
       }
     },
     {
       "id": "tool-intel-weather-current",
+      "id_status": "permanent",
       "name": "device.weather.current",
-      "description": "Get current weather conditions — temperature, conditions, humidity, wind, UV index.",
+      "description": "Current weather.",
       "inputs": [],
       "output": {
         "type": "object",
-        "description": "Current weather conditions"
+        "description": "Current weather"
       },
       "source": {
         "type": "mcp_bridge",
         "connection_id": "mobile-device-mcp",
         "mcp_tool": "device.weather.current"
+      },
+      "policy": {
+        "allowed": "always"
+      },
+      "mock": {
+        "enabled": true,
+        "mode": "examples",
+        "examples": [
+          {
+            "id": "tool-weather-current-auto",
+            "input": {},
+            "output": {
+              "success": true,
+              "data": {}
+            },
+            "description": "Auto-generated example for device.weather.current"
+          }
+        ]
+      },
+      "security": {
+        "classification": "public"
       }
     },
     {
       "id": "tool-intel-weather-forecast",
+      "id_status": "permanent",
       "name": "device.weather.forecast",
-      "description": "Get weather forecast for the next N days — highs, lows, conditions, rain probability.",
+      "description": "Weather forecast.",
       "inputs": [
         {
           "name": "days",
           "type": "number",
           "required": false,
-          "description": "Days to forecast (default 3)"
+          "description": "Days"
         }
       ],
       "output": {
         "type": "object",
-        "description": "Multi-day weather forecast"
+        "description": "Forecast"
       },
       "source": {
         "type": "mcp_bridge",
         "connection_id": "mobile-device-mcp",
         "mcp_tool": "device.weather.forecast"
+      },
+      "policy": {
+        "allowed": "always"
+      },
+      "mock": {
+        "enabled": true,
+        "mode": "examples",
+        "examples": [
+          {
+            "id": "tool-weather-forecast-auto",
+            "input": {},
+            "output": {
+              "success": true,
+              "data": {}
+            },
+            "description": "Auto-generated example for device.weather.forecast"
+          }
+        ]
+      },
+      "security": {
+        "classification": "public"
       }
     },
     {
       "id": "tool-intel-commute",
+      "id_status": "permanent",
       "name": "device.commute.estimate",
-      "description": "Estimate travel time between two locations. Use to check if user has enough time between events.",
+      "description": "Travel time estimate.",
       "inputs": [
         {
           "name": "from",
           "type": "string",
           "required": true,
-          "description": "Starting location"
+          "description": "From"
         },
         {
           "name": "to",
           "type": "string",
           "required": true,
-          "description": "Destination"
+          "description": "To"
         },
         {
           "name": "mode",
           "type": "string",
           "required": false,
-          "description": "Travel mode: driving, transit, walking"
+          "description": "Mode"
         }
       ],
       "output": {
         "type": "object",
-        "description": "Commute estimate with duration and distance"
+        "description": "Commute estimate"
       },
       "source": {
         "type": "mcp_bridge",
         "connection_id": "mobile-device-mcp",
         "mcp_tool": "device.commute.estimate"
+      },
+      "policy": {
+        "allowed": "always"
+      },
+      "mock": {
+        "enabled": true,
+        "mode": "examples",
+        "examples": [
+          {
+            "id": "tool-commute-estimate-auto",
+            "input": {
+              "from": "example",
+              "to": "example"
+            },
+            "output": {
+              "success": true,
+              "data": {}
+            },
+            "description": "Auto-generated example for device.commute.estimate"
+          }
+        ]
+      },
+      "security": {
+        "classification": "public"
       }
     },
     {
       "id": "tool-intel-birthdays",
+      "id_status": "permanent",
       "name": "device.contacts.birthdays",
-      "description": "Get contacts with upcoming birthdays in the next N days.",
+      "description": "Get upcoming birthdays.",
       "inputs": [
         {
           "name": "days",
           "type": "number",
           "required": false,
-          "description": "Look ahead days (default 30)"
+          "description": "Look ahead days"
         }
       ],
       "output": {
         "type": "object",
-        "description": "Upcoming birthdays with days until"
+        "description": "Upcoming birthdays"
       },
       "source": {
         "type": "mcp_bridge",
         "connection_id": "mobile-device-mcp",
         "mcp_tool": "device.contacts.birthdays"
+      },
+      "policy": {
+        "allowed": "always"
+      },
+      "mock": {
+        "enabled": true,
+        "mode": "examples",
+        "examples": [
+          {
+            "id": "tool-contacts-birthdays-auto",
+            "input": {},
+            "output": {
+              "success": true,
+              "data": {}
+            },
+            "description": "Auto-generated example for device.contacts.birthdays"
+          }
+        ]
+      },
+      "security": {
+        "classification": "public"
       }
     },
     {
       "id": "tool-intel-rules-match",
+      "id_status": "permanent",
       "name": "memory.rules.match",
-      "description": "Check taught rules matching the current situation. Use during briefing to flag rule violations (e.g., 'no meetings before 10am' vs a 9am event).",
+      "description": "Check taught rules for briefing.",
       "inputs": [
         {
           "name": "situation",
           "type": "string",
           "required": true,
-          "description": "Situation to match against taught rules"
+          "description": "Situation"
         },
         {
           "name": "limit",
           "type": "number",
           "required": false,
-          "description": "Max rules to return"
+          "description": "Max rules"
         }
       ],
       "output": {
         "type": "object",
-        "description": "Matching rules with relevance scores"
+        "description": "Matching rules"
       },
       "source": {
         "type": "mcp_bridge",
         "connection_id": "memory-mcp",
         "mcp_tool": "memory.rules.match"
+      },
+      "policy": {
+        "allowed": "always"
+      },
+      "mock": {
+        "enabled": true,
+        "mode": "examples",
+        "examples": [
+          {
+            "id": "tool-rules-match-auto",
+            "input": {
+              "situation": "example"
+            },
+            "output": {
+              "success": true,
+              "data": {}
+            },
+            "description": "Auto-generated example for memory.rules.match"
+          }
+        ]
+      },
+      "security": {
+        "classification": "public"
       }
     },
     {
       "id": "tool-intel-last-contact",
+      "id_status": "permanent",
       "name": "device.contacts.lastContact",
-      "description": "Check when user last communicated with a contact. Flag if it's been too long for close relationships.",
+      "description": "Check last contact date.",
       "inputs": [
         {
           "name": "name",
@@ -276,18 +501,42 @@
       ],
       "output": {
         "type": "object",
-        "description": "Days since last contact with suggestion"
+        "description": "Days since last contact"
       },
       "source": {
         "type": "mcp_bridge",
         "connection_id": "mobile-device-mcp",
         "mcp_tool": "device.contacts.lastContact"
+      },
+      "policy": {
+        "allowed": "always"
+      },
+      "mock": {
+        "enabled": true,
+        "mode": "examples",
+        "examples": [
+          {
+            "id": "tool-contacts-lastContact-auto",
+            "input": {
+              "name": "Example Name"
+            },
+            "output": {
+              "success": true,
+              "data": {}
+            },
+            "description": "Auto-generated example for device.contacts.lastContact"
+          }
+        ]
+      },
+      "security": {
+        "classification": "public"
       }
     },
     {
       "id": "tool-intel-integrations-check",
+      "id_status": "permanent",
       "name": "integrations.check",
-      "description": "Check if email/WhatsApp is connected before trying to include in briefing.",
+      "description": "Check channel connection status.",
       "inputs": [
         {
           "name": "channel",
@@ -304,18 +553,42 @@
         "type": "mcp_bridge",
         "connection_id": "mobile-device-mcp",
         "mcp_tool": "integrations.check"
+      },
+      "policy": {
+        "allowed": "always"
+      },
+      "mock": {
+        "enabled": true,
+        "mode": "examples",
+        "examples": [
+          {
+            "id": "tool-integrations-check-auto",
+            "input": {
+              "channel": "example"
+            },
+            "output": {
+              "success": true,
+              "data": {}
+            },
+            "description": "Auto-generated example for integrations.check"
+          }
+        ]
+      },
+      "security": {
+        "classification": "public"
       }
     },
     {
       "id": "tool-intel-email-unread",
+      "id_status": "permanent",
       "name": "email.unread",
-      "description": "Get unread emails to summarize in daily briefing.",
+      "description": "Get unread emails for briefing.",
       "inputs": [
         {
           "name": "limit",
           "type": "number",
           "required": false,
-          "description": "Max emails (default 10)"
+          "description": "Max emails"
         }
       ],
       "output": {
@@ -326,38 +599,661 @@
         "type": "mcp_bridge",
         "connection_id": "email-mcp",
         "mcp_tool": "email.unread"
+      },
+      "policy": {
+        "allowed": "always"
+      },
+      "mock": {
+        "enabled": true,
+        "mode": "examples",
+        "examples": [
+          {
+            "id": "tool-email-unread-auto",
+            "input": {},
+            "output": {
+              "success": true,
+              "data": {}
+            },
+            "description": "Auto-generated example for email.unread"
+          }
+        ]
+      },
+      "security": {
+        "classification": "public"
       }
     },
     {
       "id": "tool-intel-whatsapp-unread",
+      "id_status": "permanent",
       "name": "whatsapp.unread",
-      "description": "Get unread WhatsApp messages to summarize in daily briefing.",
+      "description": "Get unread WhatsApp for briefing.",
       "inputs": [
         {
           "name": "limit",
           "type": "number",
           "required": false,
-          "description": "Max messages (default 20)"
+          "description": "Max messages"
         }
       ],
       "output": {
         "type": "object",
-        "description": "Unread WhatsApp messages"
+        "description": "Unread messages"
       },
       "source": {
         "type": "mcp_bridge",
         "connection_id": "whatsapp-mcp",
         "mcp_tool": "whatsapp.unread"
+      },
+      "policy": {
+        "allowed": "always"
+      },
+      "mock": {
+        "enabled": true,
+        "mode": "examples",
+        "examples": [
+          {
+            "id": "tool-whatsapp-unread-auto",
+            "input": {},
+            "output": {
+              "success": true,
+              "data": {}
+            },
+            "description": "Auto-generated example for whatsapp.unread"
+          }
+        ]
+      },
+      "security": {
+        "classification": "public"
       }
     }
   ],
-  "connectors": [
-    "mobile-device-mcp",
-    "email-mcp",
-    "whatsapp-mcp",
-    "memory-mcp",
-    "personal-assistant-ui-mcp"
+  "intents": {
+    "supported": [
+      {
+        "id": "today_calendar",
+        "description": "Get today's events.",
+        "examples": [
+          "Get today's events.",
+          "I need to get today's events.",
+          "Can you get today's events.?",
+          "Please get today's events."
+        ],
+        "maps_to_workflow": "today_calendar_flow"
+      },
+      {
+        "id": "upcoming_calendar",
+        "description": "Get upcoming events.",
+        "examples": [
+          "Get upcoming events.",
+          "I need to get upcoming events.",
+          "Can you get upcoming events.?",
+          "Please get upcoming events."
+        ],
+        "maps_to_workflow": "upcoming_calendar_flow"
+      },
+      {
+        "id": "search_contact",
+        "description": "Search contacts for birthdays.",
+        "examples": [
+          "Search contacts for birthdays.",
+          "I need to search contacts for birthdays.",
+          "Can you search contacts for birthdays.?",
+          "Please search contacts for birthdays."
+        ],
+        "maps_to_workflow": "search_contact_flow",
+        "entities": [
+          {
+            "name": "query",
+            "type": "string",
+            "required": false,
+            "extract_from": "message"
+          }
+        ]
+      },
+      {
+        "id": "current_location",
+        "description": "Get current location.",
+        "examples": [
+          "Get current location.",
+          "I need to get current location.",
+          "Can you get current location.?",
+          "Please get current location."
+        ],
+        "maps_to_workflow": "current_location_flow"
+      },
+      {
+        "id": "recall",
+        "description": "Recall preferences for briefing.",
+        "examples": [
+          "Recall preferences for briefing.",
+          "I need to recall preferences for briefing.",
+          "Can you recall preferences for briefing.?",
+          "Please recall preferences for briefing."
+        ],
+        "maps_to_workflow": "recall_flow",
+        "entities": [
+          {
+            "name": "query",
+            "type": "string",
+            "required": false,
+            "extract_from": "message"
+          }
+        ]
+      },
+      {
+        "id": "current_weather",
+        "description": "Current weather.",
+        "examples": [
+          "Current weather.",
+          "I need to current weather.",
+          "Can you current weather.?",
+          "Please current weather."
+        ],
+        "maps_to_workflow": "current_weather_flow"
+      },
+      {
+        "id": "forecast_weather",
+        "description": "Weather forecast.",
+        "examples": [
+          "Weather forecast.",
+          "I need to weather forecast.",
+          "Can you weather forecast.?",
+          "Please weather forecast."
+        ],
+        "maps_to_workflow": "forecast_weather_flow"
+      },
+      {
+        "id": "estimate_commute",
+        "description": "Travel time estimate.",
+        "examples": [
+          "Travel time estimate.",
+          "I need to travel time estimate.",
+          "Can you travel time estimate.?",
+          "Please travel time estimate."
+        ],
+        "maps_to_workflow": "estimate_commute_flow",
+        "entities": [
+          {
+            "name": "from",
+            "type": "string",
+            "required": false,
+            "extract_from": "message"
+          },
+          {
+            "name": "to",
+            "type": "string",
+            "required": false,
+            "extract_from": "message"
+          }
+        ]
+      },
+      {
+        "id": "birthdays_contact",
+        "description": "Get upcoming birthdays.",
+        "examples": [
+          "Get upcoming birthdays.",
+          "I need to get upcoming birthdays.",
+          "Can you get upcoming birthdays.?",
+          "Please get upcoming birthdays."
+        ],
+        "maps_to_workflow": "birthdays_contact_flow"
+      },
+      {
+        "id": "match_rule",
+        "description": "Check taught rules for briefing.",
+        "examples": [
+          "Check taught rules for briefing.",
+          "I need to check taught rules for briefing.",
+          "Can you check taught rules for briefing.?",
+          "Please check taught rules for briefing."
+        ],
+        "maps_to_workflow": "match_rule_flow",
+        "entities": [
+          {
+            "name": "situation",
+            "type": "string",
+            "required": false,
+            "extract_from": "message"
+          }
+        ]
+      },
+      {
+        "id": "lastContact_contact",
+        "description": "Check last contact date.",
+        "examples": [
+          "Check last contact date.",
+          "I need to check last contact date.",
+          "Can you check last contact date.?",
+          "Please check last contact date."
+        ],
+        "maps_to_workflow": "lastContact_contact_flow",
+        "entities": [
+          {
+            "name": "name",
+            "type": "string",
+            "required": false,
+            "extract_from": "message"
+          }
+        ]
+      },
+      {
+        "id": "check",
+        "description": "Check channel connection status.",
+        "examples": [
+          "Check channel connection status.",
+          "I need to check channel connection status.",
+          "Can you check channel connection status.?",
+          "Please check channel connection status."
+        ],
+        "maps_to_workflow": "check_flow",
+        "entities": [
+          {
+            "name": "channel",
+            "type": "string",
+            "required": false,
+            "extract_from": "message"
+          }
+        ]
+      },
+      {
+        "id": "unread",
+        "description": "Get unread emails for briefing.",
+        "examples": [
+          "Get unread emails for briefing.",
+          "I need to get unread emails for briefing.",
+          "Can you get unread emails for briefing.?",
+          "Please get unread emails for briefing."
+        ],
+        "maps_to_workflow": "unread_flow"
+      },
+      {
+        "id": "unread",
+        "description": "Get unread WhatsApp for briefing.",
+        "examples": [
+          "Get unread WhatsApp for briefing.",
+          "I need to get unread WhatsApp for briefing.",
+          "Can you get unread WhatsApp for briefing.?",
+          "Please get unread WhatsApp for briefing."
+        ],
+        "maps_to_workflow": "unread_flow"
+      }
+    ],
+    "thresholds": {
+      "accept": 0.85,
+      "clarify": 0.6,
+      "reject": 0.4
+    },
+    "out_of_domain": {
+      "action": "redirect",
+      "message": "This request is outside my capabilities.",
+      "suggest_domains": []
+    }
+  },
+  "policy": {
+    "guardrails": {
+      "never": [],
+      "always": []
+    },
+    "workflows": [
+      {
+        "id": "today_calendar_flow",
+        "name": "Get today's events.",
+        "description": "Auto-generated workflow for today_calendar",
+        "trigger": "today_calendar",
+        "steps": [
+          "device.calendar.today"
+        ],
+        "required": false,
+        "on_deviation": "warn"
+      },
+      {
+        "id": "upcoming_calendar_flow",
+        "name": "Get upcoming events.",
+        "description": "Auto-generated workflow for upcoming_calendar",
+        "trigger": "upcoming_calendar",
+        "steps": [
+          "device.calendar.upcoming"
+        ],
+        "required": false,
+        "on_deviation": "warn"
+      },
+      {
+        "id": "search_contact_flow",
+        "name": "Search contacts for birthdays.",
+        "description": "Auto-generated workflow for search_contact",
+        "trigger": "search_contact",
+        "steps": [
+          "device.contacts.search"
+        ],
+        "required": false,
+        "on_deviation": "warn"
+      },
+      {
+        "id": "current_location_flow",
+        "name": "Get current location.",
+        "description": "Auto-generated workflow for current_location",
+        "trigger": "current_location",
+        "steps": [
+          "device.location.current"
+        ],
+        "required": false,
+        "on_deviation": "warn"
+      },
+      {
+        "id": "recall_flow",
+        "name": "Recall preferences for briefing.",
+        "description": "Auto-generated workflow for recall",
+        "trigger": "recall",
+        "steps": [
+          "memory.recall"
+        ],
+        "required": false,
+        "on_deviation": "warn"
+      },
+      {
+        "id": "current_weather_flow",
+        "name": "Current weather.",
+        "description": "Auto-generated workflow for current_weather",
+        "trigger": "current_weather",
+        "steps": [
+          "device.weather.current"
+        ],
+        "required": false,
+        "on_deviation": "warn"
+      },
+      {
+        "id": "forecast_weather_flow",
+        "name": "Weather forecast.",
+        "description": "Auto-generated workflow for forecast_weather",
+        "trigger": "forecast_weather",
+        "steps": [
+          "device.weather.forecast"
+        ],
+        "required": false,
+        "on_deviation": "warn"
+      },
+      {
+        "id": "estimate_commute_flow",
+        "name": "Travel time estimate.",
+        "description": "Auto-generated workflow for estimate_commute",
+        "trigger": "estimate_commute",
+        "steps": [
+          "device.commute.estimate"
+        ],
+        "required": false,
+        "on_deviation": "warn"
+      },
+      {
+        "id": "birthdays_contact_flow",
+        "name": "Get upcoming birthdays.",
+        "description": "Auto-generated workflow for birthdays_contact",
+        "trigger": "birthdays_contact",
+        "steps": [
+          "device.contacts.birthdays"
+        ],
+        "required": false,
+        "on_deviation": "warn"
+      },
+      {
+        "id": "match_rule_flow",
+        "name": "Check taught rules for briefing.",
+        "description": "Auto-generated workflow for match_rule",
+        "trigger": "match_rule",
+        "steps": [
+          "memory.rules.match"
+        ],
+        "required": false,
+        "on_deviation": "warn"
+      },
+      {
+        "id": "lastContact_contact_flow",
+        "name": "Check last contact date.",
+        "description": "Auto-generated workflow for lastContact_contact",
+        "trigger": "lastContact_contact",
+        "steps": [
+          "device.contacts.lastContact"
+        ],
+        "required": false,
+        "on_deviation": "warn"
+      },
+      {
+        "id": "check_flow",
+        "name": "Check channel connection status.",
+        "description": "Auto-generated workflow for check",
+        "trigger": "check",
+        "steps": [
+          "integrations.check"
+        ],
+        "required": false,
+        "on_deviation": "warn"
+      },
+      {
+        "id": "unread_flow",
+        "name": "Get unread emails for briefing.",
+        "description": "Auto-generated workflow for unread",
+        "trigger": "unread",
+        "steps": [
+          "email.unread"
+        ],
+        "required": false,
+        "on_deviation": "warn"
+      },
+      {
+        "id": "unread_flow",
+        "name": "Get unread WhatsApp for briefing.",
+        "description": "Auto-generated workflow for unread",
+        "trigger": "unread",
+        "steps": [
+          "email.unread"
+        ],
+        "required": false,
+        "on_deviation": "warn"
+      }
+    ],
+    "approvals": [],
+    "escalation": {
+      "enabled": false,
+      "conditions": []
+    }
+  },
+  "scenarios": [
+    {
+      "id": "today_calendar",
+      "title": "Get today's events.",
+      "description": "Test scenario for today calendar",
+      "steps": [
+        "User says: \"Get today's events.\"",
+        "Agent calls device.calendar.today — get today's events.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for today calendar is handled successfully."
+    },
+    {
+      "id": "upcoming_calendar",
+      "title": "Get upcoming events.",
+      "description": "Test scenario for upcoming calendar",
+      "steps": [
+        "User says: \"Get upcoming events.\"",
+        "Agent calls device.calendar.upcoming — get upcoming events.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for upcoming calendar is handled successfully."
+    },
+    {
+      "id": "search_contact",
+      "title": "Search contacts for birthdays.",
+      "description": "Test scenario for search contact",
+      "steps": [
+        "User says: \"Search contacts for birthdays.\"",
+        "Agent calls device.contacts.search — search contacts for birthdays.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for search contact is handled successfully."
+    },
+    {
+      "id": "current_location",
+      "title": "Get current location.",
+      "description": "Test scenario for current location",
+      "steps": [
+        "User says: \"Get current location.\"",
+        "Agent calls device.location.current — get current location.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for current location is handled successfully."
+    },
+    {
+      "id": "recall",
+      "title": "Recall preferences for briefing.",
+      "description": "Test scenario for recall",
+      "steps": [
+        "User says: \"Recall preferences for briefing.\"",
+        "Agent calls memory.recall — recall preferences for briefing.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for recall is handled successfully."
+    },
+    {
+      "id": "current_weather",
+      "title": "Current weather.",
+      "description": "Test scenario for current weather",
+      "steps": [
+        "User says: \"Current weather.\"",
+        "Agent calls device.weather.current — current weather.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for current weather is handled successfully."
+    },
+    {
+      "id": "forecast_weather",
+      "title": "Weather forecast.",
+      "description": "Test scenario for forecast weather",
+      "steps": [
+        "User says: \"Weather forecast.\"",
+        "Agent calls device.weather.forecast — weather forecast.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for forecast weather is handled successfully."
+    },
+    {
+      "id": "estimate_commute",
+      "title": "Travel time estimate.",
+      "description": "Test scenario for estimate commute",
+      "steps": [
+        "User says: \"Travel time estimate.\"",
+        "Agent calls device.commute.estimate — travel time estimate.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for estimate commute is handled successfully."
+    },
+    {
+      "id": "birthdays_contact",
+      "title": "Get upcoming birthdays.",
+      "description": "Test scenario for birthdays contact",
+      "steps": [
+        "User says: \"Get upcoming birthdays.\"",
+        "Agent calls device.contacts.birthdays — get upcoming birthdays.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for birthdays contact is handled successfully."
+    },
+    {
+      "id": "match_rule",
+      "title": "Check taught rules for briefing.",
+      "description": "Test scenario for match rule",
+      "steps": [
+        "User says: \"Check taught rules for briefing.\"",
+        "Agent calls memory.rules.match — check taught rules for briefing.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for match rule is handled successfully."
+    },
+    {
+      "id": "lastContact_contact",
+      "title": "Check last contact date.",
+      "description": "Test scenario for lastContact contact",
+      "steps": [
+        "User says: \"Check last contact date.\"",
+        "Agent calls device.contacts.lastContact — check last contact date.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for lastContact contact is handled successfully."
+    },
+    {
+      "id": "check",
+      "title": "Check channel connection status.",
+      "description": "Test scenario for check",
+      "steps": [
+        "User says: \"Check channel connection status.\"",
+        "Agent calls integrations.check — check channel connection status.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for check is handled successfully."
+    },
+    {
+      "id": "unread",
+      "title": "Get unread emails for briefing.",
+      "description": "Test scenario for unread",
+      "steps": [
+        "User says: \"Get unread emails for briefing.\"",
+        "Agent calls email.unread — get unread emails for briefing.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for unread is handled successfully."
+    },
+    {
+      "id": "unread",
+      "title": "Get unread WhatsApp for briefing.",
+      "description": "Test scenario for unread",
+      "steps": [
+        "User says: \"Get unread WhatsApp for briefing.\"",
+        "Agent calls email.unread — get unread emails for briefing.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for unread is handled successfully."
+    }
   ],
+  "role": {
+    "name": "Daily Intelligence Analyst",
+    "persona": "You are a proactive daily intelligence analyst. You don't just list the schedule — you ANALYZE it.\n\nGather ALL data first:\n1. Today's calendar events\n2. Upcoming events (next 2-3 days)\n3. Current weather + forecast\n4. Unread emails and WhatsApp (if connected)\n5. User preferences from memory\n6. Taught rules\n7. Upcoming birthdays\n8. Commute estimates between events\n\nAnalyze for: rule violations, weather impact, conflicts, tight transitions, birthday reminders, commute advice.\n\nPresent as structured briefing: Weather, Key Alerts, Today's Schedule, Look-ahead.",
+    "goals": [
+      "Analyze calendar for conflicts",
+      "Cross-reference contacts for birthdays",
+      "Check preferences to flag violations",
+      "Generate actionable insights"
+    ],
+    "limitations": [
+      "Cannot create events or send messages",
+      "Can check unread emails and WhatsApp for briefing summaries"
+    ],
+    "communication_style": {
+      "tone": "warm",
+      "verbosity": "detailed"
+    }
+  },
+  "engine": {
+    "model": "claude-sonnet-4-20250514",
+    "temperature": 0.3,
+    "rv2": {
+      "max_iterations": 10,
+      "iteration_timeout_ms": 30000,
+      "allow_parallel_tools": false,
+      "on_max_iterations": "fail"
+    },
+    "hlr": {
+      "enabled": true,
+      "critic": {
+        "enabled": false,
+        "strictness": "medium"
+      },
+      "reflection": {
+        "enabled": false,
+        "depth": "shallow"
+      }
+    },
+    "autonomy": {
+      "level": "autonomous"
+    }
+  },
   "grant_mappings": [],
   "access_policy": {
     "rules": [
@@ -372,25 +1268,6 @@
       }
     ]
   },
-  "intents": {
-    "supported": [
-      {
-        "id": "i1",
-        "description": "Default",
-        "examples": [
-          "help"
-        ]
-      }
-    ]
-  },
-  "scenarios": [
-    {
-      "id": "s1",
-      "title": "Test",
-      "steps": [
-        "test"
-      ],
-      "expected_outcome": "ok"
-    }
-  ]
+  "response_filters": [],
+  "triggers": []
 }
