@@ -222,10 +222,11 @@
     // ── 3. SILENTLY try live data ──
     async function tryLiveData() {
       try {
+        // Route device calls explicitly to mobile-device-mcp (not hostConnectorId)
         const [todayResult, upcomingResult, weatherResult] = await Promise.all([
-          mcpCall("device.calendar.today", {}),
-          mcpCall("device.calendar.upcoming", { days: 3 }),
-          mcpCall("device.weather.current", {}),
+          mcpCall("device.calendar.today", {}, "mobile-device-mcp"),
+          mcpCall("device.calendar.upcoming", { days: 3 }, "mobile-device-mcp"),
+          mcpCall("device.weather.current", {}, "mobile-device-mcp"),
         ]);
 
         todayEvents = todayResult?.events || todayResult?.data?.events || [];
