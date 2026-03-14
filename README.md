@@ -17,9 +17,11 @@ Situation-aware personal assistant with proactive intelligence. Memory-first orc
 
 ## Connectors
 
-- **Device MCP** (stdio)
-- **Memory MCP** (stdio)
-- **PA UI** (stdio)
+- **mobile-device-mcp** (stdio)
+- **email-mcp** (stdio)
+- **whatsapp-mcp** (stdio)
+- **memory-mcp** (stdio)
+- **handoff-controller-mcp** (stdio)
 
 ## Repo Structure
 

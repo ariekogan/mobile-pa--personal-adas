@@ -12,10 +12,11 @@
         "default_channel": "voice"
       }
     ],
-    "default_actor_type": "owner",
     "admin_roles": [
       "owner"
-    ]
+    ],
+    "default_actor_type": "owner",
+    "default_roles": []
   },
   "skills": [
     {
@@ -213,58 +214,6 @@
       ]
     }
   ],
-  "solution_connectors": [
-    {
-      "id": "memory-mcp",
-      "required": true,
-      "description": "Dual-store + rule engine — long-term memory (preferences, facts, rules) + ephemeral context (situations, plans) + rule matching",
-      "used_by": [
-        "pa-orchestrator",
-        "life-manager",
-        "memory-keeper",
-        "daily-intel",
-        "messaging-agent",
-        "notification-triage",
-        "teach-this"
-      ]
-    },
-    {
-      "id": "email-mcp",
-      "required": false,
-      "description": "Gmail connector — OAuth2 setup via chat, read/send/reply/search emails. Tokens stored in cloud relay.",
-      "used_by": [
-        "pa-orchestrator",
-        "messaging-agent",
-        "notification-triage",
-        "daily-intel"
-      ]
-    },
-    {
-      "id": "whatsapp-mcp",
-      "required": false,
-      "description": "WhatsApp connector — Baileys-based, QR code auth. Send/receive/search WhatsApp messages.",
-      "used_by": [
-        "pa-orchestrator",
-        "messaging-agent",
-        "notification-triage",
-        "daily-intel"
-      ]
-    },
-    {
-      "id": "personal-assistant-ui-mcp",
-      "ui_capable": true,
-      "description": "Solution UI connector — serves all PA UI plugins (schedule, dashboard, memories, teach panel)",
-      "used_by": [
-        "pa-orchestrator",
-        "life-manager",
-        "memory-keeper",
-        "daily-intel",
-        "messaging-agent",
-        "notification-triage",
-        "teach-this"
-      ]
-    }
-  ],
   "security_contracts": [
     {
       "name": "Life manager requires verified user",
@@ -361,31 +310,5 @@
       ],
       "validation": "User must be verified before teaching rules or managing automations"
     }
-  ],
-  "voice": {
-    "enabled": true,
-    "language": "en",
-    "persona": {
-      "name": "A-Team",
-      "style": "warm"
-    },
-    "welcome": "Hey! It's A-Team. What can I help you with?",
-    "prompt": {
-      "behaviorRules": "You are A-Team, a situation-aware personal assistant. Your brain is the PA Orchestrator.\n\nROUTING — the orchestrator handles all routing. Send every user message to the orchestrator via send_message_to_skill targeting 'pa-orchestrator'. The orchestrator will:\n1. Assess the situation (calendar + location + time + weather)\n2. Check taught rules in memory\n3. Either answer directly or route to the right worker skill\n\nDo NOT try to route to individual skills yourself — the orchestrator decides.",
-      "informationGathering": "Confirm message content before sending. Confirm scheduling details."
-    },
-    "verification": {
-      "enabled": true,
-      "method": "security_question",
-      "securityQuestion": {
-        "question": "What is your date of birth?",
-        "answer": "1990-01-15",
-        "answerMatchMode": "smart"
-      },
-      "maxAttempts": 3,
-      "onFailure": "hangup",
-      "skipRecentMinutes": 30
-    }
-  },
-  "functional_connectors": []
+  ]
 }

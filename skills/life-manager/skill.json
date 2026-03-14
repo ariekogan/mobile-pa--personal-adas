@@ -1,14 +1,7 @@
 {
-  "id": "life-manager",
-  "name": "Life Manager",
   "description": "Busy professionals need a personal assistant that understands their schedule, relationships, and daily routines — and remembers their preferences across conversations.",
   "version": "1.0.0",
   "phase": "DEPLOYED",
-  "ui_capable": false,
-  "connectors": [
-    "mobile-device-mcp",
-    "memory-mcp"
-  ],
   "problem": {
     "statement": "Busy professionals need a personal assistant that understands their schedule, relationships, and daily routines — and remembers their preferences across conversations.",
     "context": "Voice-first personal assistant managing calendar, contacts, messaging, memory, and proactive daily intelligence for a single user.",
@@ -20,6 +13,421 @@
       "Route memory requests to memory-keeper and briefing requests to daily-intel"
     ]
   },
+  "scenarios": [
+    {
+      "id": "today_calendar",
+      "title": "Get all calendar events for today. Returns titles, times, locations, attendees, and notes.",
+      "description": "Test scenario for today calendar",
+      "steps": [
+        "User says: \"Get all calendar events for today. Returns titles, times, locations, attendees, and notes.\"",
+        "Agent calls device.calendar.today — get all calendar events for today. returns titles, times, locations, attendees, and notes.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for today calendar is handled successfully."
+    },
+    {
+      "id": "upcoming_calendar",
+      "title": "Get upcoming calendar events for the next N days (tomorrow and beyond).",
+      "description": "Test scenario for upcoming calendar",
+      "steps": [
+        "User says: \"Get upcoming calendar events for the next N days (tomorrow and beyond).\"",
+        "Agent calls device.calendar.upcoming — get upcoming calendar events for the next n days (tomorrow and beyond).",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for upcoming calendar is handled successfully."
+    },
+    {
+      "id": "create_calendar",
+      "title": "Create a new calendar event.",
+      "description": "Test scenario for create calendar",
+      "steps": [
+        "User says: \"Create a new calendar event.\"",
+        "Agent calls device.calendar.create — create a new calendar event.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for create calendar is handled successfully."
+    },
+    {
+      "id": "search_contact",
+      "title": "Search contacts by name, relationship, or keyword.",
+      "description": "Test scenario for search contact",
+      "steps": [
+        "User says: \"Search contacts by name, relationship, or keyword.\"",
+        "Agent calls device.contacts.search — search contacts by name, relationship, or keyword.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for search contact is handled successfully."
+    },
+    {
+      "id": "get_contact",
+      "title": "Get full contact details by name or ID.",
+      "description": "Test scenario for get contact",
+      "steps": [
+        "User says: \"Get full contact details by name or ID.\"",
+        "Agent calls device.contacts.get — get full contact details by name or id.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for get contact is handled successfully."
+    },
+    {
+      "id": "current_location",
+      "title": "Get user's current location based on time of day.",
+      "description": "Test scenario for current location",
+      "steps": [
+        "User says: \"Get user's current location based on time of day.\"",
+        "Agent calls device.location.current — get user's current location based on time of day.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for current location is handled successfully."
+    },
+    {
+      "id": "send_message",
+      "title": "Send SMS/message to a contact. Always confirm with user before sending.",
+      "description": "Test scenario for send message",
+      "steps": [
+        "User says: \"Send SMS/message to a contact. Always confirm with user before sending.\"",
+        "Agent calls device.message.send — send sms/message to a contact. always confirm with user before sending.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for send message is handled successfully."
+    },
+    {
+      "id": "current_weather",
+      "title": "Get current weather conditions — temperature, conditions, humidity, wind.",
+      "description": "Test scenario for current weather",
+      "steps": [
+        "User says: \"Get current weather conditions — temperature, conditions, humidity, wind.\"",
+        "Agent calls device.weather.current — get current weather conditions — temperature, conditions, humidity, wind.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for current weather is handled successfully."
+    },
+    {
+      "id": "forecast_weather",
+      "title": "Get weather forecast for the next N days.",
+      "description": "Test scenario for forecast weather",
+      "steps": [
+        "User says: \"Get weather forecast for the next N days.\"",
+        "Agent calls device.weather.forecast — get weather forecast for the next n days.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for forecast weather is handled successfully."
+    },
+    {
+      "id": "estimate_commute",
+      "title": "Estimate travel time between two locations.",
+      "description": "Test scenario for estimate commute",
+      "steps": [
+        "User says: \"Estimate travel time between two locations.\"",
+        "Agent calls device.commute.estimate — estimate travel time between two locations.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for estimate commute is handled successfully."
+    },
+    {
+      "id": "recall",
+      "title": "Check user preferences before scheduling or taking actions. Search stored memories for rules, likes, and instructions.",
+      "description": "Test scenario for recall",
+      "steps": [
+        "User says: \"Check user preferences before scheduling or taking actions. Search stored memories for rules, likes, and instructions.\"",
+        "Agent calls memory.recall — check user preferences before scheduling or taking actions. search stored memories for rules, likes, and instructions.",
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for recall is handled successfully."
+    }
+  ],
+  "role": {
+    "name": "Personal Life Manager",
+    "persona": "You are a warm, efficient personal assistant who knows the user intimately. You speak naturally, like a trusted friend who happens to be incredibly organized.\n\nWhen asked about the day, give a smart briefing: highlight key events, flag potential issues (overlapping meetings, travel time needed), and mention important dates.\n\nMESSAGING DELEGATION: For messaging requests ('tell X...', 'send a message to...', 'text Mom...'), the orchestrator now routes these to the messaging-agent specialist. You retain device.message.send for edge cases, but primary messaging goes through messaging-agent for relationship-aware tone adaptation.\n\nMEMORY-AWARE SCHEDULING:\nBefore creating any calendar event, ALWAYS check the user's stored preferences first using memory.recall (search for 'schedule', 'meetings', 'calendar', 'time'). If a preference conflicts (e.g., 'no meetings before 10am' and the event is at 9am), warn the user and ask for confirmation before proceeding.\n\nWhen asked about weather or commute, answer directly using your weather and commute tools.\n\nIMPORTANT ROUTING RULES:\n- When the user says 'remember...', 'don't ever...', 'I prefer...', 'always...', 'what did I tell you about...' — hand off to memory-keeper.\n- When the user asks for 'morning briefing', 'how is my day', 'what should I know today', 'daily summary' — hand off to daily-intel.\n- For everything else (calendar queries, messaging, contacts, location, weather, commute) — handle directly with your tools.",
+    "goals": [
+      "Provide smart daily briefings from calendar data",
+      "Handle messaging naturally — 'tell Sarah I'll be late' becomes a real message",
+      "Schedule events conversationally",
+      "Route memory operations to memory-keeper worker",
+      "Route briefing requests to daily-intel worker"
+    ],
+    "limitations": [
+      "Cannot make purchases or financial transactions",
+      "Cannot access email content — only calendar and contacts",
+      "Must confirm with user before sending any messages"
+    ],
+    "communication_style": {
+      "tone": "warm",
+      "verbosity": "concise"
+    }
+  },
+  "glossary": {},
+  "intents": {
+    "supported": [
+      {
+        "id": "today_calendar",
+        "description": "Get all calendar events for today. Returns titles, times, locations, attendees, and notes.",
+        "examples": [
+          "Get all calendar events for today. Returns titles, times, locations, attendees, and notes.",
+          "I need to get all calendar events for today. Returns titles, times, locations, attendees, and notes.",
+          "Can you get all calendar events for today. Returns titles, times, locations, attendees, and notes.?",
+          "Please get all calendar events for today. Returns titles, times, locations, attendees, and notes."
+        ],
+        "maps_to_workflow": "today_calendar_flow",
+        "maps_to_workflow_resolved": true
+      },
+      {
+        "id": "upcoming_calendar",
+        "description": "Get upcoming calendar events for the next N days (tomorrow and beyond).",
+        "examples": [
+          "Get upcoming calendar events for the next N days (tomorrow and beyond).",
+          "I need to get upcoming calendar events for the next N days (tomorrow and beyond).",
+          "Can you get upcoming calendar events for the next N days (tomorrow and beyond).?",
+          "Please get upcoming calendar events for the next N days (tomorrow and beyond)."
+        ],
+        "maps_to_workflow": "upcoming_calendar_flow",
+        "maps_to_workflow_resolved": true
+      },
+      {
+        "id": "create_calendar",
+        "description": "Create a new calendar event.",
+        "examples": [
+          "Create a new calendar event.",
+          "I need to create a new calendar event.",
+          "Can you create a new calendar event.?",
+          "Please create a new calendar event."
+        ],
+        "maps_to_workflow": "create_calendar_flow",
+        "entities": [
+          {
+            "name": "title",
+            "type": "string",
+            "required": false,
+            "extract_from": "message"
+          },
+          {
+            "name": "date",
+            "type": "string",
+            "required": false,
+            "extract_from": "message"
+          },
+          {
+            "name": "start_time",
+            "type": "string",
+            "required": false,
+            "extract_from": "message"
+          }
+        ],
+        "maps_to_workflow_resolved": true
+      },
+      {
+        "id": "search_contact",
+        "description": "Search contacts by name, relationship, or keyword.",
+        "examples": [
+          "Search contacts by name, relationship, or keyword.",
+          "I need to search contacts by name, relationship, or keyword.",
+          "Can you search contacts by name, relationship, or keyword.?",
+          "Please search contacts by name, relationship, or keyword."
+        ],
+        "maps_to_workflow": "search_contact_flow",
+        "entities": [
+          {
+            "name": "query",
+            "type": "string",
+            "required": false,
+            "extract_from": "message"
+          }
+        ],
+        "maps_to_workflow_resolved": true
+      },
+      {
+        "id": "get_contact",
+        "description": "Get full contact details by name or ID.",
+        "examples": [
+          "Get full contact details by name or ID.",
+          "I need to get full contact details by name or ID.",
+          "Can you get full contact details by name or ID.?",
+          "Please get full contact details by name or ID."
+        ],
+        "maps_to_workflow": "get_contact_flow",
+        "entities": [
+          {
+            "name": "contact_id",
+            "type": "string",
+            "required": false,
+            "extract_from": "message"
+          }
+        ],
+        "maps_to_workflow_resolved": true
+      },
+      {
+        "id": "current_location",
+        "description": "Get user's current location based on time of day.",
+        "examples": [
+          "Get user's current location based on time of day.",
+          "I need to get user's current location based on time of day.",
+          "Can you get user's current location based on time of day.?",
+          "Please get user's current location based on time of day."
+        ],
+        "maps_to_workflow": "current_location_flow",
+        "maps_to_workflow_resolved": true
+      },
+      {
+        "id": "send_message",
+        "description": "Send SMS/message to a contact. Always confirm with user before sending.",
+        "examples": [
+          "Send SMS/message to a contact. Always confirm with user before sending.",
+          "I need to send SMS/message to a contact. Always confirm with user before sending.",
+          "Can you send SMS/message to a contact. Always confirm with user before sending.?",
+          "Please send SMS/message to a contact. Always confirm with user before sending."
+        ],
+        "maps_to_workflow": "send_message_flow",
+        "entities": [
+          {
+            "name": "contact_name",
+            "type": "string",
+            "required": false,
+            "extract_from": "message"
+          },
+          {
+            "name": "message",
+            "type": "string",
+            "required": false,
+            "extract_from": "message"
+          }
+        ],
+        "maps_to_workflow_resolved": true
+      },
+      {
+        "id": "current_weather",
+        "description": "Get current weather conditions — temperature, conditions, humidity, wind.",
+        "examples": [
+          "Get current weather conditions — temperature, conditions, humidity, wind.",
+          "I need to get current weather conditions — temperature, conditions, humidity, wind.",
+          "Can you get current weather conditions — temperature, conditions, humidity, wind.?",
+          "Please get current weather conditions — temperature, conditions, humidity, wind."
+        ],
+        "maps_to_workflow": "current_weather_flow",
+        "maps_to_workflow_resolved": true
+      },
+      {
+        "id": "forecast_weather",
+        "description": "Get weather forecast for the next N days.",
+        "examples": [
+          "Get weather forecast for the next N days.",
+          "I need to get weather forecast for the next N days.",
+          "Can you get weather forecast for the next N days.?",
+          "Please get weather forecast for the next N days."
+        ],
+        "maps_to_workflow": "forecast_weather_flow",
+        "maps_to_workflow_resolved": true
+      },
+      {
+        "id": "estimate_commute",
+        "description": "Estimate travel time between two locations.",
+        "examples": [
+          "Estimate travel time between two locations.",
+          "I need to estimate travel time between two locations.",
+          "Can you estimate travel time between two locations.?",
+          "Please estimate travel time between two locations."
+        ],
+        "maps_to_workflow": "estimate_commute_flow",
+        "entities": [
+          {
+            "name": "from",
+            "type": "string",
+            "required": false,
+            "extract_from": "message"
+          },
+          {
+            "name": "to",
+            "type": "string",
+            "required": false,
+            "extract_from": "message"
+          }
+        ],
+        "maps_to_workflow_resolved": true
+      },
+      {
+        "id": "recall",
+        "description": "Check user preferences before scheduling or taking actions. Search stored memories for rules, likes, and instructions.",
+        "examples": [
+          "Check user preferences before scheduling or taking actions. Search stored memories for rules, likes, and instructions.",
+          "I need to check user preferences before scheduling or taking actions. Search stored memories for rules, likes, and instructions.",
+          "Can you check user preferences before scheduling or taking actions. Search stored memories for rules, likes, and instructions.?",
+          "Please check user preferences before scheduling or taking actions. Search stored memories for rules, likes, and instructions."
+        ],
+        "maps_to_workflow": "recall_flow",
+        "entities": [
+          {
+            "name": "query",
+            "type": "string",
+            "required": false,
+            "extract_from": "message"
+          }
+        ],
+        "maps_to_workflow_resolved": true
+      }
+    ],
+    "thresholds": {
+      "accept": 0.85,
+      "clarify": 0.6,
+      "reject": 0.4
+    },
+    "out_of_domain": {
+      "action": "redirect",
+      "message": "This request is outside my capabilities.",
+      "suggest_domains": []
+    }
+  },
+  "engine": {
+    "rv2": {
+      "max_iterations": 10,
+      "iteration_timeout_ms": 30000,
+      "allow_parallel_tools": false,
+      "on_max_iterations": "fail"
+    },
+    "hlr": {
+      "enabled": true,
+      "critic": {
+        "enabled": false,
+        "check_interval": 3,
+        "strictness": "medium"
+      },
+      "reflection": {
+        "enabled": false,
+        "depth": "shallow"
+      },
+      "replanning": {
+        "enabled": true,
+        "max_replans": 5
+      }
+    },
+    "autonomy": {
+      "level": "autonomous"
+    },
+    "finalization_gate": {
+      "enabled": true,
+      "max_retries": 2
+    },
+    "internal_error": {
+      "enabled": true,
+      "tool_not_found": {
+        "enter_resolution_after": 1,
+        "retryable": false
+      },
+      "resolution": {
+        "max_iterations": 1,
+        "allowed_capabilities": [
+          "read",
+          "search",
+          "document_output"
+        ]
+      },
+      "loop_detection": {
+        "enabled": true,
+        "identical_call_threshold": 2
+      }
+    },
+    "model": "claude-sonnet-4-20250514",
+    "temperature": 0.3
+  },
+  "toolbox_imports": [],
   "tools": [
     {
       "id": "tool-cal-today",
@@ -572,218 +980,18 @@
       }
     }
   ],
-  "intents": {
-    "supported": [
-      {
-        "id": "today_calendar",
-        "description": "Get all calendar events for today. Returns titles, times, locations, attendees, and notes.",
-        "examples": [
-          "Get all calendar events for today. Returns titles, times, locations, attendees, and notes.",
-          "I need to get all calendar events for today. Returns titles, times, locations, attendees, and notes.",
-          "Can you get all calendar events for today. Returns titles, times, locations, attendees, and notes.?",
-          "Please get all calendar events for today. Returns titles, times, locations, attendees, and notes."
-        ],
-        "maps_to_workflow": "today_calendar_flow"
-      },
-      {
-        "id": "upcoming_calendar",
-        "description": "Get upcoming calendar events for the next N days (tomorrow and beyond).",
-        "examples": [
-          "Get upcoming calendar events for the next N days (tomorrow and beyond).",
-          "I need to get upcoming calendar events for the next N days (tomorrow and beyond).",
-          "Can you get upcoming calendar events for the next N days (tomorrow and beyond).?",
-          "Please get upcoming calendar events for the next N days (tomorrow and beyond)."
-        ],
-        "maps_to_workflow": "upcoming_calendar_flow"
-      },
-      {
-        "id": "create_calendar",
-        "description": "Create a new calendar event.",
-        "examples": [
-          "Create a new calendar event.",
-          "I need to create a new calendar event.",
-          "Can you create a new calendar event.?",
-          "Please create a new calendar event."
-        ],
-        "maps_to_workflow": "create_calendar_flow",
-        "entities": [
-          {
-            "name": "title",
-            "type": "string",
-            "required": false,
-            "extract_from": "message"
-          },
-          {
-            "name": "date",
-            "type": "string",
-            "required": false,
-            "extract_from": "message"
-          },
-          {
-            "name": "start_time",
-            "type": "string",
-            "required": false,
-            "extract_from": "message"
-          }
-        ]
-      },
-      {
-        "id": "search_contact",
-        "description": "Search contacts by name, relationship, or keyword.",
-        "examples": [
-          "Search contacts by name, relationship, or keyword.",
-          "I need to search contacts by name, relationship, or keyword.",
-          "Can you search contacts by name, relationship, or keyword.?",
-          "Please search contacts by name, relationship, or keyword."
-        ],
-        "maps_to_workflow": "search_contact_flow",
-        "entities": [
-          {
-            "name": "query",
-            "type": "string",
-            "required": false,
-            "extract_from": "message"
-          }
-        ]
-      },
-      {
-        "id": "get_contact",
-        "description": "Get full contact details by name or ID.",
-        "examples": [
-          "Get full contact details by name or ID.",
-          "I need to get full contact details by name or ID.",
-          "Can you get full contact details by name or ID.?",
-          "Please get full contact details by name or ID."
-        ],
-        "maps_to_workflow": "get_contact_flow",
-        "entities": [
-          {
-            "name": "contact_id",
-            "type": "string",
-            "required": false,
-            "extract_from": "message"
-          }
-        ]
-      },
-      {
-        "id": "current_location",
-        "description": "Get user's current location based on time of day.",
-        "examples": [
-          "Get user's current location based on time of day.",
-          "I need to get user's current location based on time of day.",
-          "Can you get user's current location based on time of day.?",
-          "Please get user's current location based on time of day."
-        ],
-        "maps_to_workflow": "current_location_flow"
-      },
-      {
-        "id": "send_message",
-        "description": "Send SMS/message to a contact. Always confirm with user before sending.",
-        "examples": [
-          "Send SMS/message to a contact. Always confirm with user before sending.",
-          "I need to send SMS/message to a contact. Always confirm with user before sending.",
-          "Can you send SMS/message to a contact. Always confirm with user before sending.?",
-          "Please send SMS/message to a contact. Always confirm with user before sending."
-        ],
-        "maps_to_workflow": "send_message_flow",
-        "entities": [
-          {
-            "name": "contact_name",
-            "type": "string",
-            "required": false,
-            "extract_from": "message"
-          },
-          {
-            "name": "message",
-            "type": "string",
-            "required": false,
-            "extract_from": "message"
-          }
-        ]
-      },
-      {
-        "id": "current_weather",
-        "description": "Get current weather conditions — temperature, conditions, humidity, wind.",
-        "examples": [
-          "Get current weather conditions — temperature, conditions, humidity, wind.",
-          "I need to get current weather conditions — temperature, conditions, humidity, wind.",
-          "Can you get current weather conditions — temperature, conditions, humidity, wind.?",
-          "Please get current weather conditions — temperature, conditions, humidity, wind."
-        ],
-        "maps_to_workflow": "current_weather_flow"
-      },
-      {
-        "id": "forecast_weather",
-        "description": "Get weather forecast for the next N days.",
-        "examples": [
-          "Get weather forecast for the next N days.",
-          "I need to get weather forecast for the next N days.",
-          "Can you get weather forecast for the next N days.?",
-          "Please get weather forecast for the next N days."
-        ],
-        "maps_to_workflow": "forecast_weather_flow"
-      },
-      {
-        "id": "estimate_commute",
-        "description": "Estimate travel time between two locations.",
-        "examples": [
-          "Estimate travel time between two locations.",
-          "I need to estimate travel time between two locations.",
-          "Can you estimate travel time between two locations.?",
-          "Please estimate travel time between two locations."
-        ],
-        "maps_to_workflow": "estimate_commute_flow",
-        "entities": [
-          {
-            "name": "from",
-            "type": "string",
-            "required": false,
-            "extract_from": "message"
-          },
-          {
-            "name": "to",
-            "type": "string",
-            "required": false,
-            "extract_from": "message"
-          }
-        ]
-      },
-      {
-        "id": "recall",
-        "description": "Check user preferences before scheduling or taking actions. Search stored memories for rules, likes, and instructions.",
-        "examples": [
-          "Check user preferences before scheduling or taking actions. Search stored memories for rules, likes, and instructions.",
-          "I need to check user preferences before scheduling or taking actions. Search stored memories for rules, likes, and instructions.",
-          "Can you check user preferences before scheduling or taking actions. Search stored memories for rules, likes, and instructions.?",
-          "Please check user preferences before scheduling or taking actions. Search stored memories for rules, likes, and instructions."
-        ],
-        "maps_to_workflow": "recall_flow",
-        "entities": [
-          {
-            "name": "query",
-            "type": "string",
-            "required": false,
-            "extract_from": "message"
-          }
-        ]
-      }
-    ],
-    "thresholds": {
-      "accept": 0.85,
-      "clarify": 0.6,
-      "reject": 0.4
-    },
-    "out_of_domain": {
-      "action": "redirect",
-      "message": "This request is outside my capabilities.",
-      "suggest_domains": []
-    }
-  },
+  "meta_tools": [],
+  "triggers": [],
+  "connectors": [
+    "mobile-device-mcp",
+    "memory-mcp"
+  ],
   "policy": {
     "guardrails": {
       "never": [],
       "always": []
     },
+    "approvals": [],
     "workflows": [
       {
         "id": "today_calendar_flow",
@@ -794,7 +1002,10 @@
           "device.calendar.today"
         ],
         "required": false,
-        "on_deviation": "warn"
+        "on_deviation": "warn",
+        "steps_resolved": [
+          true
+        ]
       },
       {
         "id": "upcoming_calendar_flow",
@@ -805,7 +1016,10 @@
           "device.calendar.upcoming"
         ],
         "required": false,
-        "on_deviation": "warn"
+        "on_deviation": "warn",
+        "steps_resolved": [
+          true
+        ]
       },
       {
         "id": "create_calendar_flow",
@@ -816,7 +1030,10 @@
           "device.calendar.create"
         ],
         "required": false,
-        "on_deviation": "warn"
+        "on_deviation": "warn",
+        "steps_resolved": [
+          true
+        ]
       },
       {
         "id": "search_contact_flow",
@@ -827,7 +1044,10 @@
           "device.contacts.search"
         ],
         "required": false,
-        "on_deviation": "warn"
+        "on_deviation": "warn",
+        "steps_resolved": [
+          true
+        ]
       },
       {
         "id": "get_contact_flow",
@@ -838,7 +1058,10 @@
           "device.contacts.get"
         ],
         "required": false,
-        "on_deviation": "warn"
+        "on_deviation": "warn",
+        "steps_resolved": [
+          true
+        ]
       },
       {
         "id": "current_location_flow",
@@ -849,7 +1072,10 @@
           "device.location.current"
         ],
         "required": false,
-        "on_deviation": "warn"
+        "on_deviation": "warn",
+        "steps_resolved": [
+          true
+        ]
       },
       {
         "id": "send_message_flow",
@@ -860,7 +1086,10 @@
           "device.message.send"
         ],
         "required": false,
-        "on_deviation": "warn"
+        "on_deviation": "warn",
+        "steps_resolved": [
+          true
+        ]
       },
       {
         "id": "current_weather_flow",
@@ -871,7 +1100,10 @@
           "device.weather.current"
         ],
         "required": false,
-        "on_deviation": "warn"
+        "on_deviation": "warn",
+        "steps_resolved": [
+          true
+        ]
       },
       {
         "id": "forecast_weather_flow",
@@ -882,7 +1114,10 @@
           "device.weather.forecast"
         ],
         "required": false,
-        "on_deviation": "warn"
+        "on_deviation": "warn",
+        "steps_resolved": [
+          true
+        ]
       },
       {
         "id": "estimate_commute_flow",
@@ -893,7 +1128,10 @@
           "device.commute.estimate"
         ],
         "required": false,
-        "on_deviation": "warn"
+        "on_deviation": "warn",
+        "steps_resolved": [
+          true
+        ]
       },
       {
         "id": "recall_flow",
@@ -904,182 +1142,22 @@
           "memory.recall"
         ],
         "required": false,
-        "on_deviation": "warn"
+        "on_deviation": "warn",
+        "steps_resolved": [
+          true
+        ]
       }
     ],
-    "approvals": [],
     "escalation": {
       "enabled": false,
-      "conditions": []
+      "conditions": [],
+      "target": ""
     }
   },
-  "scenarios": [
-    {
-      "id": "today_calendar",
-      "title": "Get all calendar events for today. Returns titles, times, locations, attendees, and notes.",
-      "description": "Test scenario for today calendar",
-      "steps": [
-        "User says: \"Get all calendar events for today. Returns titles, times, locations, attendees, and notes.\"",
-        "Agent calls device.calendar.today — get all calendar events for today. returns titles, times, locations, attendees, and notes.",
-        "Agent presents results to the user"
-      ],
-      "expected_outcome": "User request for today calendar is handled successfully."
-    },
-    {
-      "id": "upcoming_calendar",
-      "title": "Get upcoming calendar events for the next N days (tomorrow and beyond).",
-      "description": "Test scenario for upcoming calendar",
-      "steps": [
-        "User says: \"Get upcoming calendar events for the next N days (tomorrow and beyond).\"",
-        "Agent calls device.calendar.upcoming — get upcoming calendar events for the next n days (tomorrow and beyond).",
-        "Agent presents results to the user"
-      ],
-      "expected_outcome": "User request for upcoming calendar is handled successfully."
-    },
-    {
-      "id": "create_calendar",
-      "title": "Create a new calendar event.",
-      "description": "Test scenario for create calendar",
-      "steps": [
-        "User says: \"Create a new calendar event.\"",
-        "Agent calls device.calendar.create — create a new calendar event.",
-        "Agent presents results to the user"
-      ],
-      "expected_outcome": "User request for create calendar is handled successfully."
-    },
-    {
-      "id": "search_contact",
-      "title": "Search contacts by name, relationship, or keyword.",
-      "description": "Test scenario for search contact",
-      "steps": [
-        "User says: \"Search contacts by name, relationship, or keyword.\"",
-        "Agent calls device.contacts.search — search contacts by name, relationship, or keyword.",
-        "Agent presents results to the user"
-      ],
-      "expected_outcome": "User request for search contact is handled successfully."
-    },
-    {
-      "id": "get_contact",
-      "title": "Get full contact details by name or ID.",
-      "description": "Test scenario for get contact",
-      "steps": [
-        "User says: \"Get full contact details by name or ID.\"",
-        "Agent calls device.contacts.get — get full contact details by name or id.",
-        "Agent presents results to the user"
-      ],
-      "expected_outcome": "User request for get contact is handled successfully."
-    },
-    {
-      "id": "current_location",
-      "title": "Get user's current location based on time of day.",
-      "description": "Test scenario for current location",
-      "steps": [
-        "User says: \"Get user's current location based on time of day.\"",
-        "Agent calls device.location.current — get user's current location based on time of day.",
-        "Agent presents results to the user"
-      ],
-      "expected_outcome": "User request for current location is handled successfully."
-    },
-    {
-      "id": "send_message",
-      "title": "Send SMS/message to a contact. Always confirm with user before sending.",
-      "description": "Test scenario for send message",
-      "steps": [
-        "User says: \"Send SMS/message to a contact. Always confirm with user before sending.\"",
-        "Agent calls device.message.send — send sms/message to a contact. always confirm with user before sending.",
-        "Agent presents results to the user"
-      ],
-      "expected_outcome": "User request for send message is handled successfully."
-    },
-    {
-      "id": "current_weather",
-      "title": "Get current weather conditions — temperature, conditions, humidity, wind.",
-      "description": "Test scenario for current weather",
-      "steps": [
-        "User says: \"Get current weather conditions — temperature, conditions, humidity, wind.\"",
-        "Agent calls device.weather.current — get current weather conditions — temperature, conditions, humidity, wind.",
-        "Agent presents results to the user"
-      ],
-      "expected_outcome": "User request for current weather is handled successfully."
-    },
-    {
-      "id": "forecast_weather",
-      "title": "Get weather forecast for the next N days.",
-      "description": "Test scenario for forecast weather",
-      "steps": [
-        "User says: \"Get weather forecast for the next N days.\"",
-        "Agent calls device.weather.forecast — get weather forecast for the next n days.",
-        "Agent presents results to the user"
-      ],
-      "expected_outcome": "User request for forecast weather is handled successfully."
-    },
-    {
-      "id": "estimate_commute",
-      "title": "Estimate travel time between two locations.",
-      "description": "Test scenario for estimate commute",
-      "steps": [
-        "User says: \"Estimate travel time between two locations.\"",
-        "Agent calls device.commute.estimate — estimate travel time between two locations.",
-        "Agent presents results to the user"
-      ],
-      "expected_outcome": "User request for estimate commute is handled successfully."
-    },
-    {
-      "id": "recall",
-      "title": "Check user preferences before scheduling or taking actions. Search stored memories for rules, likes, and instructions.",
-      "description": "Test scenario for recall",
-      "steps": [
-        "User says: \"Check user preferences before scheduling or taking actions. Search stored memories for rules, likes, and instructions.\"",
-        "Agent calls memory.recall — check user preferences before scheduling or taking actions. search stored memories for rules, likes, and instructions.",
-        "Agent presents results to the user"
-      ],
-      "expected_outcome": "User request for recall is handled successfully."
-    }
-  ],
-  "role": {
-    "name": "Personal Life Manager",
-    "persona": "You are a warm, efficient personal assistant who knows the user intimately. You speak naturally, like a trusted friend who happens to be incredibly organized.\n\nWhen asked about the day, give a smart briefing: highlight key events, flag potential issues (overlapping meetings, travel time needed), and mention important dates.\n\nMESSAGING DELEGATION: For messaging requests ('tell X...', 'send a message to...', 'text Mom...'), the orchestrator now routes these to the messaging-agent specialist. You retain device.message.send for edge cases, but primary messaging goes through messaging-agent for relationship-aware tone adaptation.\n\nMEMORY-AWARE SCHEDULING:\nBefore creating any calendar event, ALWAYS check the user's stored preferences first using memory.recall (search for 'schedule', 'meetings', 'calendar', 'time'). If a preference conflicts (e.g., 'no meetings before 10am' and the event is at 9am), warn the user and ask for confirmation before proceeding.\n\nWhen asked about weather or commute, answer directly using your weather and commute tools.\n\nIMPORTANT ROUTING RULES:\n- When the user says 'remember...', 'don't ever...', 'I prefer...', 'always...', 'what did I tell you about...' — hand off to memory-keeper.\n- When the user asks for 'morning briefing', 'how is my day', 'what should I know today', 'daily summary' — hand off to daily-intel.\n- For everything else (calendar queries, messaging, contacts, location, weather, commute) — handle directly with your tools.",
-    "goals": [
-      "Provide smart daily briefings from calendar data",
-      "Handle messaging naturally — 'tell Sarah I'll be late' becomes a real message",
-      "Schedule events conversationally",
-      "Route memory operations to memory-keeper worker",
-      "Route briefing requests to daily-intel worker"
-    ],
-    "limitations": [
-      "Cannot make purchases or financial transactions",
-      "Cannot access email content — only calendar and contacts",
-      "Must confirm with user before sending any messages"
-    ],
-    "communication_style": {
-      "tone": "warm",
-      "verbosity": "concise"
-    }
-  },
-  "engine": {
-    "model": "claude-sonnet-4-20250514",
-    "temperature": 0.3,
-    "rv2": {
-      "max_iterations": 10,
-      "iteration_timeout_ms": 30000,
-      "allow_parallel_tools": false,
-      "on_max_iterations": "fail"
-    },
-    "hlr": {
-      "enabled": true,
-      "critic": {
-        "enabled": false,
-        "strictness": "medium"
-      },
-      "reflection": {
-        "enabled": false,
-        "depth": "shallow"
-      }
-    },
-    "autonomy": {
-      "level": "autonomous"
-    }
-  },
+  "channels": [],
+  "id": "life-manager",
+  "name": "Life Manager",
+  "ui_capable": false,
   "grant_mappings": [],
   "access_policy": {
     "rules": [
@@ -1092,5 +1170,6 @@
     ]
   },
   "response_filters": [],
-  "triggers": []
+  "updated_at": "2026-03-14T20:16:14.991Z",
+  "created_at": "2026-03-14T20:16:05.303Z"
 }

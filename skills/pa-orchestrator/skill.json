@@ -1,17 +1,7 @@
 {
-  "id": "pa-orchestrator",
-  "name": "PA Orchestrator",
   "description": "A personal assistant needs a situation-aware brain that detects what's happening, decides how to respond, and routes to the right specialist — not just a static gateway that pattern-matches keywords.",
   "version": "2.3.0",
   "phase": "DEPLOYED",
-  "ui_capable": false,
-  "connectors": [
-    "mobile-device-mcp",
-    "email-mcp",
-    "whatsapp-mcp",
-    "memory-mcp",
-    "handoff-controller-mcp"
-  ],
   "problem": {
     "statement": "A personal assistant needs a situation-aware brain that detects what's happening, decides how to respond, and routes to the right specialist — not just a static gateway that pattern-matches keywords.",
     "context": "Orchestrator for a mobile personal assistant. Fuses signals (calendar, location, weather, time) into situations, checks taught rules, and routes to self-sufficient worker skills. Also handles simple requests directly without handoff.",
@@ -24,6 +14,260 @@
       "Run proactively on PT5M trigger to detect situations like running late or meeting starting"
     ]
   },
+  "scenarios": [
+    {
+      "id": "intent-calendar-view",
+      "title": "User wants to see what's on their calendar",
+      "description": "Test scenario for intent-calendar-view",
+      "steps": [
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for intent-calendar-view is handled successfully."
+    },
+    {
+      "id": "intent-calendar-create",
+      "title": "User wants to create, schedule, or book an event",
+      "description": "Test scenario for intent-calendar-create",
+      "steps": [
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for intent-calendar-create is handled successfully."
+    },
+    {
+      "id": "intent-teach",
+      "title": "User wants to teach the PA a behavior or rule",
+      "description": "Test scenario for intent-teach",
+      "steps": [
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for intent-teach is handled successfully."
+    },
+    {
+      "id": "intent-message",
+      "title": "User wants to send a message, text, email, or WhatsApp",
+      "description": "Test scenario for intent-message",
+      "steps": [
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for intent-message is handled successfully."
+    },
+    {
+      "id": "intent-briefing",
+      "title": "User wants a daily briefing or schedule analysis",
+      "description": "Test scenario for intent-briefing",
+      "steps": [
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for intent-briefing is handled successfully."
+    },
+    {
+      "id": "intent-notifications",
+      "title": "User wants to check or manage notifications",
+      "description": "Test scenario for intent-notifications",
+      "steps": [
+        "Agent presents results to the user"
+      ],
+      "expected_outcome": "User request for intent-notifications is handled successfully."
+    }
+  ],
+  "role": {
+    "name": "Situation-Aware Orchestrator",
+    "persona": "You are the brain of a personal assistant called A-Team. Your job: UNDERSTAND → MATCH INTENT → ACT (directly or route).\n\n**STEP 1: MATCH USER INTENT**\nLook at what the user said and match it to the intents defined in this skill (intent-calendar-view, intent-message, intent-briefing, etc.). Each intent tells you exactly what to do.\n\n**STEP 2: ANSWER DIRECTLY OR ROUTE**\nBased on the matched intent:\n- If action is \"call_tool\": Call the specified tools immediately. Return the results directly to the user.\n  - Example: User says \"what's on my calendar\" → intent-calendar-view matches → call device.calendar.today → return events\n  - Example: User says \"what's the weather\" → call device.weather.current → return weather\n- If action is \"handoff\": Call sys.handoffToSkill to route to the target skill with full context.\n  - Example: User says \"schedule a meeting with Mark\" → intent-calendar-create matches → handoff to life-manager\n\n**STEP 3: MEMORY & CONTEXT**\nBefore routing, always check:\n- memory.recall(\"query from user message\") — search for relevant preferences/facts\n- memory.rules.match(\"situation description\") — check for taught rules that apply\nInclude these findings in your response or handoff summary.\n\n**STEP 4: CRITICAL RULES**\n1. DO NOT ask the user for information that tools can provide. Call the tool instead.\n   - WRONG: Ask \"which calendar provider?\"\n   - RIGHT: Call device.calendar.today and return results\n2. DO NOT escalate simple lookups. Calendar, weather, time are answered directly.\n3. For ANY request involving messaging, scheduling changes, briefings, rules — use sys.handoffToSkill. NEVER draft messages or create events yourself.\n4. If user intent doesn't clearly match an intent, err on the side of handoff (safer than guessing).",
+    "goals": [
+      "Detect situations from fused signals",
+      "Route to the right worker based on situation and intent",
+      "Handle simple queries directly without handoff",
+      "Follow taught rules when they match the current situation",
+      "Run proactively without being noisy"
+    ],
+    "limitations": [
+      "Cannot make purchases or financial transactions",
+      "Can check integration status and guide setup — actual email/WhatsApp usage goes through workers",
+      "Must confirm with user before sending any messages"
+    ],
+    "communication_style": {
+      "tone": "warm",
+      "verbosity": "concise"
+    }
+  },
+  "glossary": {},
+  "intents": {
+    "supported": [
+      {
+        "id": "intent-calendar-view",
+        "name": "View Calendar Events",
+        "description": "User wants to see what's on their calendar",
+        "patterns": [
+          "what's on my calendar",
+          "what on my calendar",
+          "show my calendar",
+          "show me my events",
+          "do i have anything",
+          "what do i have",
+          "my schedule",
+          "what's my schedule",
+          "upcoming events",
+          "any meetings"
+        ],
+        "action": "call_tool",
+        "tool_sequence": [
+          {
+            "tool": "device.calendar.today",
+            "description": "Get today's events first"
+          }
+        ],
+        "response_template": "I found {count} events on your calendar today:\n{events_list}",
+        "maps_to_workflow_resolved": true
+      },
+      {
+        "id": "intent-calendar-create",
+        "name": "Create/Schedule Event",
+        "description": "User wants to create, schedule, or book an event",
+        "patterns": [
+          "schedule",
+          "book",
+          "create an event",
+          "add to calendar",
+          "set up a meeting"
+        ],
+        "action": "handoff",
+        "target_skill": "life-manager",
+        "context": "User wants to create or modify a calendar event",
+        "maps_to_workflow_resolved": true
+      },
+      {
+        "id": "intent-teach",
+        "name": "Create/Modify Rule",
+        "description": "User wants to teach the PA a behavior or rule",
+        "patterns": [
+          "when",
+          "do",
+          "always",
+          "never",
+          "teach",
+          "create a rule",
+          "show my rules"
+        ],
+        "action": "handoff",
+        "target_skill": "teach-this",
+        "context": "User wants to create, modify, or view automation rules",
+        "maps_to_workflow_resolved": true
+      },
+      {
+        "id": "intent-message",
+        "name": "Send Message",
+        "description": "User wants to send a message, text, email, or WhatsApp",
+        "patterns": [
+          "tell",
+          "text",
+          "message",
+          "send",
+          "email",
+          "whatsapp",
+          "reply"
+        ],
+        "action": "handoff",
+        "target_skill": "messaging-agent",
+        "context": "User wants to send a message",
+        "maps_to_workflow_resolved": true
+      },
+      {
+        "id": "intent-briefing",
+        "name": "Daily Briefing",
+        "description": "User wants a daily briefing or schedule analysis",
+        "patterns": [
+          "morning briefing",
+          "how is my day",
+          "what should i know",
+          "daily summary",
+          "day summary"
+        ],
+        "action": "handoff",
+        "target_skill": "daily-intel",
+        "context": "User wants a daily briefing",
+        "maps_to_workflow_resolved": true
+      },
+      {
+        "id": "intent-notifications",
+        "name": "Check Notifications",
+        "description": "User wants to check or manage notifications",
+        "patterns": [
+          "check notifications",
+          "what did i miss",
+          "any important messages",
+          "turn on dnd",
+          "do not disturb"
+        ],
+        "action": "handoff",
+        "target_skill": "notification-triage",
+        "context": "User wants to check or manage notifications",
+        "maps_to_workflow_resolved": true
+      }
+    ],
+    "thresholds": {
+      "accept": 0.85,
+      "clarify": 0.6,
+      "reject": 0.4
+    },
+    "out_of_domain": {
+      "action": "redirect",
+      "message": "This request is outside my capabilities.",
+      "suggest_domains": []
+    }
+  },
+  "engine": {
+    "rv2": {
+      "max_iterations": 25,
+      "iteration_timeout_ms": 30000,
+      "allow_parallel_tools": false,
+      "on_max_iterations": "ask_user"
+    },
+    "hlr": {
+      "enabled": true,
+      "critic": {
+        "enabled": true,
+        "check_interval": 3,
+        "strictness": "medium"
+      },
+      "reflection": {
+        "enabled": true,
+        "depth": "shallow"
+      },
+      "replanning": {
+        "enabled": true,
+        "max_replans": 5
+      }
+    },
+    "autonomy": {
+      "level": "supervised"
+    },
+    "finalization_gate": {
+      "enabled": true,
+      "max_retries": 2
+    },
+    "internal_error": {
+      "enabled": true,
+      "tool_not_found": {
+        "enter_resolution_after": 1,
+        "retryable": false
+      },
+      "resolution": {
+        "max_iterations": 1,
+        "allowed_capabilities": [
+          "read",
+          "search",
+          "document_output"
+        ]
+      },
+      "loop_detection": {
+        "enabled": true,
+        "identical_call_threshold": 2
+      }
+    },
+    "model": "claude-sonnet",
+    "temperature": 0.3
+  },
+  "toolbox_imports": [],
   "tools": [
     {
       "id": "tool-cal-today",
@@ -766,129 +1010,31 @@
       }
     }
   ],
-  "intents": {
-    "supported": [
-      {
-        "id": "intent-calendar-view",
-        "name": "View Calendar Events",
-        "description": "User wants to see what's on their calendar",
-        "patterns": [
-          "what's on my calendar",
-          "what on my calendar",
-          "show my calendar",
-          "show me my events",
-          "do i have anything",
-          "what do i have",
-          "my schedule",
-          "what's my schedule",
-          "upcoming events",
-          "any meetings"
-        ],
-        "action": "call_tool",
-        "tool_sequence": [
-          {
-            "tool": "device.calendar.today",
-            "description": "Get today's events first"
-          }
-        ],
-        "response_template": "I found {count} events on your calendar today:\n{events_list}"
-      },
-      {
-        "id": "intent-calendar-create",
-        "name": "Create/Schedule Event",
-        "description": "User wants to create, schedule, or book an event",
-        "patterns": [
-          "schedule",
-          "book",
-          "create an event",
-          "add to calendar",
-          "set up a meeting"
-        ],
-        "action": "handoff",
-        "target_skill": "life-manager",
-        "context": "User wants to create or modify a calendar event"
-      },
-      {
-        "id": "intent-teach",
-        "name": "Create/Modify Rule",
-        "description": "User wants to teach the PA a behavior or rule",
-        "patterns": [
-          "when",
-          "do",
-          "always",
-          "never",
-          "teach",
-          "create a rule",
-          "show my rules"
-        ],
-        "action": "handoff",
-        "target_skill": "teach-this",
-        "context": "User wants to create, modify, or view automation rules"
-      },
-      {
-        "id": "intent-message",
-        "name": "Send Message",
-        "description": "User wants to send a message, text, email, or WhatsApp",
-        "patterns": [
-          "tell",
-          "text",
-          "message",
-          "send",
-          "email",
-          "whatsapp",
-          "reply"
-        ],
-        "action": "handoff",
-        "target_skill": "messaging-agent",
-        "context": "User wants to send a message"
-      },
-      {
-        "id": "intent-briefing",
-        "name": "Daily Briefing",
-        "description": "User wants a daily briefing or schedule analysis",
-        "patterns": [
-          "morning briefing",
-          "how is my day",
-          "what should i know",
-          "daily summary",
-          "day summary"
-        ],
-        "action": "handoff",
-        "target_skill": "daily-intel",
-        "context": "User wants a daily briefing"
-      },
-      {
-        "id": "intent-notifications",
-        "name": "Check Notifications",
-        "description": "User wants to check or manage notifications",
-        "patterns": [
-          "check notifications",
-          "what did i miss",
-          "any important messages",
-          "turn on dnd",
-          "do not disturb"
-        ],
-        "action": "handoff",
-        "target_skill": "notification-triage",
-        "context": "User wants to check or manage notifications"
-      }
-    ],
-    "thresholds": {
-      "accept": 0.85,
-      "clarify": 0.6,
-      "reject": 0.4
-    },
-    "out_of_domain": {
-      "action": "redirect",
-      "message": "This request is outside my capabilities.",
-      "suggest_domains": []
+  "meta_tools": [],
+  "triggers": [
+    {
+      "id": "proactive-check",
+      "name": "Proactive Situation Check",
+      "type": "schedule",
+      "every": "PT5M",
+      "enabled": true,
+      "prompt": "Run a proactive situation check. Do NOT respond unless something actionable is detected.\n\nSTEP 1 — GATHER SIGNALS (call all in parallel):\n- device.calendar.today → today's events\n- device.location.current → where the user is now\n- device.weather.current → current conditions\n- context.read → any active situations already being tracked\n\nSTEP 2 — DETECT SITUATIONS:\nFor each upcoming event, check:\n\na) RUNNING_LATE: If next event starts within 45 minutes:\n   - Call device.commute.estimate(current_location → event_location)\n   - If commute_minutes > minutes_until_event: USER IS LATE\n   - Store as ephemeral context: {type: 'running_late', event, attendees, eta_minutes}\n   - Call sys.handoffToSkill targeting messaging-agent with summary: 'User is running late for [event] at [time] at [location]. Attendees: [names]. Estimated arrival: [ETA]. Draft a brief apology/ETA message to each attendee.'\n\nb) MEETING_STARTING: If event starts in 5-15 minutes:\n   - Store as ephemeral context: {type: 'meeting_starting', event}\n   - Notify user: '[Event] starts in [X] minutes at [location].'\n   - Check memory.rules.match('meeting starting') — if user has a rule like 'enable DND during meetings', call sys.handoffToSkill to notification-triage.\n\nc) END_OF_DAY: If current time is after 17:00 and no more events today:\n   - Briefly note: 'Your day is clear. [X] unread notifications.'\n   - Only mention if there are unread notifications worth surfacing.\n\nd) WEATHER_IMPACT: If rain/storm expected and user has an outdoor or travel event coming up:\n   - Note the weather risk with the relevant event.\n\nSTEP 3 — CHECK TAUGHT RULES:\n- Call memory.rules.match with a description of any detected situation\n- If a taught rule matches, follow its action (it overrides default behavior)\n\nSTEP 4 — ACT OR STOP:\n- If situation detected: store as ephemeral context, notify user, route to worker if action needed\n- If nothing actionable: respond 'No situations detected.' and stop.\n- Do NOT notify about situations that are already stored in active context (avoid duplicates).",
+      "concurrency": 1
     }
-  },
+  ],
+  "connectors": [
+    "mobile-device-mcp",
+    "email-mcp",
+    "whatsapp-mcp",
+    "memory-mcp",
+    "handoff-controller-mcp"
+  ],
   "policy": {
     "guardrails": {
       "never": [],
       "always": []
     },
+    "approvals": [],
     "workflows": [
       {
         "name": "User wants to see what's on their calendar",
@@ -896,7 +1042,9 @@
         "trigger": "intent-calendar-view",
         "steps": [],
         "required": false,
-        "on_deviation": "warn"
+        "on_deviation": "warn",
+        "id": "user_wants_to_see_whats_on_their_calendar_0e3cac4c",
+        "steps_resolved": []
       },
       {
         "name": "User wants to create, schedule, or book an event",
@@ -904,7 +1052,9 @@
         "trigger": "intent-calendar-create",
         "steps": [],
         "required": false,
-        "on_deviation": "warn"
+        "on_deviation": "warn",
+        "id": "user_wants_to_create_schedule_or_book_an_event_f6b17ba5",
+        "steps_resolved": []
       },
       {
         "name": "User wants to teach the PA a behavior or rule",
@@ -912,7 +1062,9 @@
         "trigger": "intent-teach",
         "steps": [],
         "required": false,
-        "on_deviation": "warn"
+        "on_deviation": "warn",
+        "id": "user_wants_to_teach_the_pa_a_behavior_or_rule_350665e0",
+        "steps_resolved": []
       },
       {
         "name": "User wants to send a message, text, email, or WhatsApp",
@@ -920,7 +1072,9 @@
         "trigger": "intent-message",
         "steps": [],
         "required": false,
-        "on_deviation": "warn"
+        "on_deviation": "warn",
+        "id": "user_wants_to_send_a_message_text_email_or_whatsapp_c9730a8b",
+        "steps_resolved": []
       },
       {
         "name": "User wants a daily briefing or schedule analysis",
@@ -928,7 +1082,9 @@
         "trigger": "intent-briefing",
         "steps": [],
         "required": false,
-        "on_deviation": "warn"
+        "on_deviation": "warn",
+        "id": "user_wants_a_daily_briefing_or_schedule_analysis_0bd30f18",
+        "steps_resolved": []
       },
       {
         "name": "User wants to check or manage notifications",
@@ -936,98 +1092,21 @@
         "trigger": "intent-notifications",
         "steps": [],
         "required": false,
-        "on_deviation": "warn"
+        "on_deviation": "warn",
+        "id": "user_wants_to_check_or_manage_notifications_832a958b",
+        "steps_resolved": []
       }
     ],
-    "approvals": [],
     "escalation": {
       "enabled": false,
-      "conditions": []
+      "conditions": [],
+      "target": ""
     }
   },
-  "scenarios": [
-    {
-      "id": "intent-calendar-view",
-      "title": "User wants to see what's on their calendar",
-      "description": "Test scenario for intent-calendar-view",
-      "steps": [
-        "Agent presents results to the user"
-      ],
-      "expected_outcome": "User request for intent-calendar-view is handled successfully."
-    },
-    {
-      "id": "intent-calendar-create",
-      "title": "User wants to create, schedule, or book an event",
-      "description": "Test scenario for intent-calendar-create",
-      "steps": [
-        "Agent presents results to the user"
-      ],
-      "expected_outcome": "User request for intent-calendar-create is handled successfully."
-    },
-    {
-      "id": "intent-teach",
-      "title": "User wants to teach the PA a behavior or rule",
-      "description": "Test scenario for intent-teach",
-      "steps": [
-        "Agent presents results to the user"
-      ],
-      "expected_outcome": "User request for intent-teach is handled successfully."
-    },
-    {
-      "id": "intent-message",
-      "title": "User wants to send a message, text, email, or WhatsApp",
-      "description": "Test scenario for intent-message",
-      "steps": [
-        "Agent presents results to the user"
-      ],
-      "expected_outcome": "User request for intent-message is handled successfully."
-    },
-    {
-      "id": "intent-briefing",
-      "title": "User wants a daily briefing or schedule analysis",
-      "description": "Test scenario for intent-briefing",
-      "steps": [
-        "Agent presents results to the user"
-      ],
-      "expected_outcome": "User request for intent-briefing is handled successfully."
-    },
-    {
-      "id": "intent-notifications",
-      "title": "User wants to check or manage notifications",
-      "description": "Test scenario for intent-notifications",
-      "steps": [
-        "Agent presents results to the user"
-      ],
-      "expected_outcome": "User request for intent-notifications is handled successfully."
-    }
-  ],
-  "role": {
-    "name": "Situation-Aware Orchestrator",
-    "persona": "You are the brain of a personal assistant called A-Team. Your job: UNDERSTAND → MATCH INTENT → ACT (directly or route).\n\n**STEP 1: MATCH USER INTENT**\nLook at what the user said and match it to the intents defined in this skill (intent-calendar-view, intent-message, intent-briefing, etc.). Each intent tells you exactly what to do.\n\n**STEP 2: ANSWER DIRECTLY OR ROUTE**\nBased on the matched intent:\n- If action is \"call_tool\": Call the specified tools immediately. Return the results directly to the user.\n  - Example: User says \"what's on my calendar\" → intent-calendar-view matches → call device.calendar.today → return events\n  - Example: User says \"what's the weather\" → call device.weather.current → return weather\n- If action is \"handoff\": Call sys.handoffToSkill to route to the target skill with full context.\n  - Example: User says \"schedule a meeting with Mark\" → intent-calendar-create matches → handoff to life-manager\n\n**STEP 3: MEMORY & CONTEXT**\nBefore routing, always check:\n- memory.recall(\"query from user message\") — search for relevant preferences/facts\n- memory.rules.match(\"situation description\") — check for taught rules that apply\nInclude these findings in your response or handoff summary.\n\n**STEP 4: CRITICAL RULES**\n1. DO NOT ask the user for information that tools can provide. Call the tool instead.\n   - WRONG: Ask \"which calendar provider?\"\n   - RIGHT: Call device.calendar.today and return results\n2. DO NOT escalate simple lookups. Calendar, weather, time are answered directly.\n3. For ANY request involving messaging, scheduling changes, briefings, rules — use sys.handoffToSkill. NEVER draft messages or create events yourself.\n4. If user intent doesn't clearly match an intent, err on the side of handoff (safer than guessing).",
-    "goals": [
-      "Detect situations from fused signals",
-      "Route to the right worker based on situation and intent",
-      "Handle simple queries directly without handoff",
-      "Follow taught rules when they match the current situation",
-      "Run proactively without being noisy"
-    ],
-    "limitations": [
-      "Cannot make purchases or financial transactions",
-      "Can check integration status and guide setup — actual email/WhatsApp usage goes through workers",
-      "Must confirm with user before sending any messages"
-    ],
-    "communication_style": {
-      "tone": "warm",
-      "verbosity": "concise"
-    }
-  },
-  "engine": {
-    "model": "claude-sonnet",
-    "temperature": 0.3,
-    "rv2": {
-      "max_iterations": 25
-    }
-  },
+  "channels": [],
+  "id": "pa-orchestrator",
+  "name": "PA Orchestrator",
+  "ui_capable": false,
   "grant_mappings": [],
   "access_policy": {
     "rules": [
@@ -1051,15 +1130,6 @@
     ]
   },
   "response_filters": [],
-  "triggers": [
-    {
-      "id": "proactive-check",
-      "name": "Proactive Situation Check",
-      "type": "schedule",
-      "every": "PT5M",
-      "enabled": true,
-      "prompt": "Run a proactive situation check. Do NOT respond unless something actionable is detected.\n\nSTEP 1 — GATHER SIGNALS (call all in parallel):\n- device.calendar.today → today's events\n- device.location.current → where the user is now\n- device.weather.current → current conditions\n- context.read → any active situations already being tracked\n\nSTEP 2 — DETECT SITUATIONS:\nFor each upcoming event, check:\n\na) RUNNING_LATE: If next event starts within 45 minutes:\n   - Call device.commute.estimate(current_location → event_location)\n   - If commute_minutes > minutes_until_event: USER IS LATE\n   - Store as ephemeral context: {type: 'running_late', event, attendees, eta_minutes}\n   - Call sys.handoffToSkill targeting messaging-agent with summary: 'User is running late for [event] at [time] at [location]. Attendees: [names]. Estimated arrival: [ETA]. Draft a brief apology/ETA message to each attendee.'\n\nb) MEETING_STARTING: If event starts in 5-15 minutes:\n   - Store as ephemeral context: {type: 'meeting_starting', event}\n   - Notify user: '[Event] starts in [X] minutes at [location].'\n   - Check memory.rules.match('meeting starting') — if user has a rule like 'enable DND during meetings', call sys.handoffToSkill to notification-triage.\n\nc) END_OF_DAY: If current time is after 17:00 and no more events today:\n   - Briefly note: 'Your day is clear. [X] unread notifications.'\n   - Only mention if there are unread notifications worth surfacing.\n\nd) WEATHER_IMPACT: If rain/storm expected and user has an outdoor or travel event coming up:\n   - Note the weather risk with the relevant event.\n\nSTEP 3 — CHECK TAUGHT RULES:\n- Call memory.rules.match with a description of any detected situation\n- If a taught rule matches, follow its action (it overrides default behavior)\n\nSTEP 4 — ACT OR STOP:\n- If situation detected: store as ephemeral context, notify user, route to worker if action needed\n- If nothing actionable: respond 'No situations detected.' and stop.\n- Do NOT notify about situations that are already stored in active context (avoid duplicates).",
-      "concurrency": 1
-    }
-  ]
+  "updated_at": "2026-03-14T20:16:53.852Z",
+  "created_at": "2026-03-14T20:15:54.043Z"
 }
